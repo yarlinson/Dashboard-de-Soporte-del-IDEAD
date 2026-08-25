@@ -91,8 +91,8 @@ export function RoleMappingForm({ value, onChange, distinctVinculaciones = [] }:
       </Button>
 
       {unmapped.length > 0 && (
-        <div className="flex flex-col gap-2 rounded-lg border border-amber-300 bg-amber-50 p-3">
-          <p className="text-xs font-medium text-amber-900">
+        <div className="border-warning/40 bg-warning/10 flex flex-col gap-2 rounded-lg border p-3">
+          <p className="text-warning text-xs font-medium">
             Vinculaciones del archivo sin rol configurado:
           </p>
           <div className="flex flex-wrap gap-2">
@@ -100,7 +100,7 @@ export function RoleMappingForm({ value, onChange, distinctVinculaciones = [] }:
               <Badge
                 key={v}
                 variant="outline"
-                className="cursor-pointer gap-1 border-amber-400 bg-amber-100 text-amber-900 hover:bg-amber-200"
+                className="border-warning/50 bg-warning/15 text-warning hover:bg-warning/25 cursor-pointer gap-1"
                 onClick={() => addRule(v)}
               >
                 {v}

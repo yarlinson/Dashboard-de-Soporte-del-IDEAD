@@ -2,17 +2,20 @@
 
 import { useCallback, useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
+import { FileDown } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, cardGlow } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { FileDropzone } from "@/components/etl/file-dropzone";
 import { DataPreviewTable } from "@/components/etl/data-preview-table";
 import { RowIssuesBadge } from "@/components/etl/row-issues-badge";
 import { DocenteRoleFilter } from "@/components/etl/docente-role-filter";
+import { EtlStepper, type EtlStepperStep } from "@/components/etl/etl-stepper";
 import { ConfigForm } from "@/components/etl/docentes-siau/config-form";
 import { readTabularFile, downloadCsv, downloadXlsx } from "@/lib/etl/core/csv";
+import { downloadCsvTemplate, downloadXlsxTemplate } from "@/lib/etl/core/template";
 import { computeTransformSummary } from "@/lib/etl/core/summary";
 import { overrideKey } from "@/lib/etl/core/teacher-grouping";
 import {
@@ -24,6 +27,8 @@ import {
 import { SIAU_DOCENTES_REQUIRED_COLUMNS, DEFAULT_ROLE_MAPPING, DEFAULT_GENERIC_PASSWORD } from "@/lib/etl/docentes-siau/constants";
 import type { DocenteConfig } from "@/lib/etl/docentes-siau/schema";
 import { extractDistinctRoles, filterDocenteRowsByRole, type DocenteRowResult } from "@/lib/etl/core/moodle-docente";
+import { useEtlHistory } from "@/hooks/use-etl-history";
+import { cn } from "@/lib/utils";
 
 const DEFAULT_CONFIG: DocenteConfig = {
   genericPassword: DEFAULT_GENERIC_PASSWORD,
@@ -33,6 +38,7 @@ const DEFAULT_CONFIG: DocenteConfig = {
 };
 
 export function DocentesSiauWorkflow() {
+  const { recordRun } = useEtlHistory();
   const [rawRows, setRawRows] = useState<Record<string, unknown>[]>([]);
   const [fileError, setFileError] = useState<string | null>(null);
   const [config, setConfig] = useState<DocenteConfig>(DEFAULT_CONFIG);
@@ -106,9 +112,9 @@ export function DocentesSiauWorkflow() {
                 return (
                   <div
                     key={i}
-                    className="flex items-center gap-1 rounded-md border border-amber-400 bg-amber-50 px-1 py-0.5"
+                    className="border-warning/40 bg-warning/10 flex items-center gap-1 rounded-md border px-1 py-0.5"
                   >
-                    <span className="font-mono text-[11px] text-amber-900">{course} →</span>
+                    <span className="text-warning font-mono text-[11px]">{course} →</span>
                     <Select value={role} onValueChange={(v) => handleRoleOverride(output.username, course, v)}>
                       <SelectTrigger className="h-6 w-auto min-w-24 border-none bg-transparent px-1 text-[11px]">
                         <SelectValue />
@@ -149,17 +155,32 @@ export function DocentesSiauWorkflow() {
   function handleExportCsv() {
     if (!result) return;
     downloadCsv("moodle-bulk-docentes.csv", exportDocenteRowsToCsv(visibleRows));
+    recordRun({ caseId: "docentes-siau", caseLabel: "Docentes SIAU", totalRows: visibleSummary.totalRows, validRows: visibleSummary.validRows });
   }
 
   function handleExportXlsx() {
     if (!result) return;
     const { rows, columns } = getDocenteExportData(visibleRows);
     downloadXlsx("moodle-bulk-docentes.xlsx", rows, columns);
+    recordRun({ caseId: "docentes-siau", caseLabel: "Docentes SIAU", totalRows: visibleSummary.totalRows, validRows: visibleSummary.validRows });
   }
+
+  function handleDownloadTemplate(format: "csv" | "xlsx") {
+    if (format === "csv") downloadCsvTemplate("plantilla-siau-docentes.csv", SIAU_DOCENTES_REQUIRED_COLUMNS);
+    else downloadXlsxTemplate("plantilla-siau-docentes.xlsx", SIAU_DOCENTES_REQUIRED_COLUMNS);
+  }
+
+  const steps: EtlStepperStep[] = [
+    { id: "step-archivo", label: "Archivo de origen", status: rawRows.length > 0 ? "complete" : "active" },
+    { id: "step-config", label: "Configuración", status: rawRows.length > 0 ? "complete" : "pending" },
+    { id: "step-preview", label: "Previsualización", status: result ? "complete" : "pending" },
+  ];
 
   return (
     <div className="flex flex-col gap-6">
-      <Card>
+      <EtlStepper steps={steps} />
+
+      <Card id="step-archivo">
         <CardHeader>
           <CardTitle className="text-base">1. Archivo de origen (SIAU - Reporte Docente Cursos)</CardTitle>
         </CardHeader>
@@ -168,6 +189,16 @@ export function DocentesSiauWorkflow() {
             label="Arrastra o selecciona el export de SIAU (.xlsx, .xls, .csv)"
             onFileSelected={handleFileSelected}
           />
+          <div className="flex flex-wrap gap-2">
+            <Button type="button" variant="outline" size="sm" onClick={() => handleDownloadTemplate("csv")}>
+              <FileDown className="size-3.5" />
+              Plantilla CSV
+            </Button>
+            <Button type="button" variant="outline" size="sm" onClick={() => handleDownloadTemplate("xlsx")}>
+              <FileDown className="size-3.5" />
+              Plantilla Excel
+            </Button>
+          </div>
           {fileError && (
             <Alert variant="destructive">
               <AlertTitle>Error al leer el archivo</AlertTitle>
@@ -182,7 +213,7 @@ export function DocentesSiauWorkflow() {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card id="step-config">
         <CardHeader>
           <CardTitle className="text-base">2. Configuración</CardTitle>
         </CardHeader>
@@ -192,7 +223,7 @@ export function DocentesSiauWorkflow() {
       </Card>
 
       {result && (
-        <Card>
+        <Card id="step-preview" className={cn(cardGlow({ glow: "red" }))}>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="text-base">3. Previsualización</CardTitle>
             <div className="flex gap-2">

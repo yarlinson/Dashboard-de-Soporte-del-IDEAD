@@ -1,6 +1,26 @@
 import * as React from "react"
+import { cva, type VariantProps } from "class-variance-authority"
 
 import { cn } from "@/lib/utils"
+
+/**
+ * Resplandor rojo institucional opcional para `Card`, aditivo vía className
+ * (`cn(cardGlow({ glow: "red" }))`) — no cambia la firma de `Card`, así que
+ * cada superficie que lo use queda visualmente consistente sin que cada una
+ * reinvente sus propios valores de sombra.
+ */
+export const cardGlow = cva("transition-shadow duration-200", {
+  variants: {
+    glow: {
+      none: "",
+      red: "border-unillanos-red-dark/40 shadow-[0_0_0_1px_rgba(211,6,20,0.15),0_8px_30px_-10px_rgba(211,6,20,0.35)]",
+    },
+  },
+  defaultVariants: {
+    glow: "none",
+  },
+})
+export type CardGlowProps = VariantProps<typeof cardGlow>
 
 function Card({ className, ...props }: React.ComponentProps<"div">) {
   return (

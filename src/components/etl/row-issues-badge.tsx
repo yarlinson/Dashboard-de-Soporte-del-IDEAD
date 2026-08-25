@@ -21,11 +21,7 @@ export function RowIssuesBadge({ issues }: { issues: EtlIssue[] }) {
   const warnings = issues.filter((i) => i.severity === "warning");
 
   if (errors.length === 0 && warnings.length === 0) {
-    return (
-      <Badge variant="secondary" className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100">
-        OK
-      </Badge>
-    );
+    return <Badge variant="success">OK</Badge>;
   }
 
   return (
@@ -38,7 +34,7 @@ export function RowIssuesBadge({ issues }: { issues: EtlIssue[] }) {
             </Badge>
           )}
           {warnings.length > 0 && (
-            <Badge variant="secondary" className="bg-amber-100 text-amber-800 hover:bg-amber-100">
+            <Badge variant="warning">
               {warnings.length} aviso{warnings.length > 1 ? "s" : ""}
             </Badge>
           )}
@@ -47,7 +43,7 @@ export function RowIssuesBadge({ issues }: { issues: EtlIssue[] }) {
       <TooltipContent className="max-w-xs text-left whitespace-normal">
         <div className="flex flex-col gap-2">
           <IssueList title={`Errores (${errors.length})`} issues={errors} className="font-semibold text-destructive" />
-          <IssueList title={`Avisos (${warnings.length})`} issues={warnings} className="font-semibold text-amber-600" />
+          <IssueList title={`Avisos (${warnings.length})`} issues={warnings} className="text-warning font-semibold" />
         </div>
       </TooltipContent>
     </Tooltip>

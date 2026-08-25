@@ -1,8 +1,11 @@
+import { ArrowRightLeft, Columns3, GraduationCap, type LucideIcon } from "lucide-react";
+
 export interface EtlUseCaseMeta {
   id: string;
   title: string;
   description: string;
   href: string;
+  icon: LucideIcon;
 }
 
 export const etlUseCases: EtlUseCaseMeta[] = [
@@ -11,6 +14,7 @@ export const etlUseCases: EtlUseCaseMeta[] = [
     title: "SIAU → Moodle (Carga masiva de usuarios)",
     description: "Transforma el export de SIAU en el CSV de carga masiva de usuarios para Moodle.",
     href: "/etl/siau-to-moodle",
+    icon: ArrowRightLeft,
   },
   {
     id: "custom-mapping",
@@ -18,6 +22,7 @@ export const etlUseCases: EtlUseCaseMeta[] = [
     description:
       "Importa listados de estudiantes en formatos heterogéneos (Excel, CSV o texto pegado) y mapea sus columnas al formato de carga masiva de Moodle.",
     href: "/etl/custom-mapping",
+    icon: Columns3,
   },
   {
     id: "docentes-siau",
@@ -25,6 +30,7 @@ export const etlUseCases: EtlUseCaseMeta[] = [
     description:
       "Agrupa el reporte 'SIAU - Reporte Docente Cursos' por docente y genera el CSV de carga masiva de Moodle con roles asignados según la vinculación.",
     href: "/etl/docentes-siau",
+    icon: GraduationCap,
   },
   {
     id: "custom-mapping-docentes",
@@ -32,5 +38,6 @@ export const etlUseCases: EtlUseCaseMeta[] = [
     description:
       "Importa listados de docentes en formatos heterogéneos (Excel, CSV o texto pegado) y los agrupa por docente con roles configurables, generando el CSV de carga masiva de Moodle.",
     href: "/etl/custom-mapping-docentes",
+    icon: Columns3,
   },
 ];

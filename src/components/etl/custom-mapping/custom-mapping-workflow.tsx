@@ -6,12 +6,13 @@ import { Columns3, Eye, Upload, X } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, cardGlow } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { FileDropzone } from "@/components/etl/file-dropzone";
 import { PasteDataInput } from "@/components/etl/paste-data-input";
 import { DataPreviewTable } from "@/components/etl/data-preview-table";
 import { RowIssuesBadge } from "@/components/etl/row-issues-badge";
+import { EtlStepper, type EtlStepperStep } from "@/components/etl/etl-stepper";
 import { ColumnMappingForm } from "@/components/etl/custom-mapping/column-mapping-form";
 import { ConfigForm } from "@/components/etl/custom-mapping/config-form";
 import { readTabularFile, parsePastedTable, downloadCsv, downloadXlsx, extractColumnNames } from "@/lib/etl/core/csv";
@@ -32,6 +33,8 @@ import {
 } from "@/lib/etl/custom-mapping/column-suggestions";
 import { detectPivotedColumns } from "@/lib/etl/custom-mapping/pivot-detection";
 import type { EtlRowResult } from "@/lib/etl/core/types";
+import { useEtlHistory } from "@/hooks/use-etl-history";
+import { cn } from "@/lib/utils";
 
 type SourceMode = "file" | "paste";
 
@@ -42,6 +45,7 @@ const defaultConfig: MoodleConfig = {
 };
 
 export function CustomMappingWorkflow() {
+  const { recordRun } = useEtlHistory();
   const [sourceMode, setSourceMode] = useState<SourceMode>("file");
   const [rawRows, setRawRows] = useState<Record<string, unknown>[]>([]);
   const [sourceError, setSourceError] = useState<string | null>(null);
@@ -178,17 +182,31 @@ export function CustomMappingWorkflow() {
   function handleExportCsv() {
     if (!result) return;
     downloadCsv("moodle-bulk-users.csv", exportRowsToCsv(visibleRows));
+    recordRun({ caseId: "custom-mapping", caseLabel: "Mapeo flexible", totalRows: visibleSummary.totalRows, validRows: visibleSummary.validRows });
   }
 
   function handleExportXlsx() {
     if (!result) return;
     const { rows, columns } = getMoodleExportData(visibleRows);
     downloadXlsx("moodle-bulk-users.xlsx", rows, columns);
+    recordRun({ caseId: "custom-mapping", caseLabel: "Mapeo flexible", totalRows: visibleSummary.totalRows, validRows: visibleSummary.validRows });
   }
+
+  const steps: EtlStepperStep[] = [
+    { id: "step-origen", label: "Origen de datos", status: rawRows.length > 0 ? "complete" : "active" },
+    {
+      id: "step-mapeo",
+      label: "Mapeo y configuración",
+      status: mapping && configValid ? "complete" : rawRows.length > 0 ? "active" : "pending",
+    },
+    { id: "step-preview", label: "Previsualización", status: result ? "complete" : "pending" },
+  ];
 
   return (
     <div className="flex flex-col gap-6">
-      <Card>
+      <EtlStepper steps={steps} />
+
+      <Card id="step-origen">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
             <Upload className="text-primary size-4" />
@@ -252,7 +270,7 @@ export function CustomMappingWorkflow() {
       </Card>
 
       {sourceColumns.length > 0 && (
-        <Card>
+        <Card id="step-mapeo">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
               <Columns3 className="text-primary size-4" />
@@ -277,7 +295,7 @@ export function CustomMappingWorkflow() {
       )}
 
       {result && (
-        <Card>
+        <Card id="step-preview" className={cn(cardGlow({ glow: "red" }))}>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="flex items-center gap-2 text-base">
               <Eye className="text-primary size-4" />

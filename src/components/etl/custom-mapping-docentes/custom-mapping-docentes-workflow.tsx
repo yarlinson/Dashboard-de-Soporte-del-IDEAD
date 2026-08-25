@@ -6,7 +6,7 @@ import { Columns3, Eye, Upload, X } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, cardGlow } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { FileDropzone } from "@/components/etl/file-dropzone";
@@ -14,6 +14,7 @@ import { PasteDataInput } from "@/components/etl/paste-data-input";
 import { DataPreviewTable } from "@/components/etl/data-preview-table";
 import { RowIssuesBadge } from "@/components/etl/row-issues-badge";
 import { DocenteRoleFilter } from "@/components/etl/docente-role-filter";
+import { EtlStepper, type EtlStepperStep } from "@/components/etl/etl-stepper";
 import { ColumnMappingDocenteForm } from "@/components/etl/custom-mapping-docentes/column-mapping-form";
 import { ConfigForm } from "@/components/etl/custom-mapping/config-form";
 import { readTabularFile, parsePastedTable, downloadCsv, downloadXlsx, extractColumnNames } from "@/lib/etl/core/csv";
@@ -38,6 +39,8 @@ import {
   type MappingSuggestions,
 } from "@/lib/etl/custom-mapping-docentes/column-suggestions";
 import { detectPivotedColumns } from "@/lib/etl/custom-mapping/pivot-detection";
+import { useEtlHistory } from "@/hooks/use-etl-history";
+import { cn } from "@/lib/utils";
 
 type SourceMode = "file" | "paste";
 
@@ -48,6 +51,7 @@ const defaultConfig: MoodleConfig = {
 };
 
 export function CustomMappingDocentesWorkflow() {
+  const { recordRun } = useEtlHistory();
   const [sourceMode, setSourceMode] = useState<SourceMode>("file");
   const [rawRows, setRawRows] = useState<Record<string, unknown>[]>([]);
   const [sourceError, setSourceError] = useState<string | null>(null);
@@ -134,13 +138,13 @@ export function CustomMappingDocentesWorkflow() {
                     key={i}
                     className={
                       conflict
-                        ? "flex items-center gap-1 rounded-md border border-amber-400 bg-amber-50 px-1 py-0.5"
+                        ? "border-warning/40 bg-warning/10 flex items-center gap-1 rounded-md border px-1 py-0.5"
                         : "flex items-center gap-1"
                     }
                   >
                     {conflict ? (
                       <>
-                        <span className="font-mono text-[11px] text-amber-900">{course} →</span>
+                        <span className="text-warning font-mono text-[11px]">{course} →</span>
                         <Select value={role} onValueChange={(v) => handleRoleOverride(output.username, course, v)}>
                           <SelectTrigger className="h-6 w-auto min-w-24 border-none bg-transparent px-1 text-[11px]">
                             <SelectValue />
@@ -240,17 +244,31 @@ export function CustomMappingDocentesWorkflow() {
   function handleExportCsv() {
     if (!result) return;
     downloadCsv("moodle-bulk-docentes.csv", exportDocenteRowsToCsv(visibleRows));
+    recordRun({ caseId: "custom-mapping-docentes", caseLabel: "Mapeo flexible (Docentes)", totalRows: visibleSummary.totalRows, validRows: visibleSummary.validRows });
   }
 
   function handleExportXlsx() {
     if (!result) return;
     const { rows, columns } = getDocenteExportData(visibleRows);
     downloadXlsx("moodle-bulk-docentes.xlsx", rows, columns);
+    recordRun({ caseId: "custom-mapping-docentes", caseLabel: "Mapeo flexible (Docentes)", totalRows: visibleSummary.totalRows, validRows: visibleSummary.validRows });
   }
+
+  const steps: EtlStepperStep[] = [
+    { id: "step-origen", label: "Origen de datos", status: rawRows.length > 0 ? "complete" : "active" },
+    {
+      id: "step-mapeo",
+      label: "Mapeo y configuración",
+      status: mapping && configValid ? "complete" : rawRows.length > 0 ? "active" : "pending",
+    },
+    { id: "step-preview", label: "Previsualización", status: result ? "complete" : "pending" },
+  ];
 
   return (
     <div className="flex flex-col gap-6">
-      <Card>
+      <EtlStepper steps={steps} />
+
+      <Card id="step-origen">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
             <Upload className="text-primary size-4" />
@@ -314,7 +332,7 @@ export function CustomMappingDocentesWorkflow() {
       </Card>
 
       {sourceColumns.length > 0 && (
-        <Card>
+        <Card id="step-mapeo">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
               <Columns3 className="text-primary size-4" />
@@ -340,7 +358,7 @@ export function CustomMappingDocentesWorkflow() {
       )}
 
       {result && (
-        <Card>
+        <Card id="step-preview" className={cn(cardGlow({ glow: "red" }))}>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="flex items-center gap-2 text-base">
               <Eye className="text-primary size-4" />
