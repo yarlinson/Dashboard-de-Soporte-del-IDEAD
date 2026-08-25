@@ -64,7 +64,7 @@ export const navGroups: NavGroup[] = [
       },
       {
         id: "custom-mapping",
-        label: "Mapeo flexible de columnas",
+        label: "Mapeo flexible (Estudiantes)",
         icon: Columns3,
         href: customMapping?.href,
         status: "active",
@@ -78,7 +78,7 @@ export const navGroups: NavGroup[] = [
       },
       {
         id: "custom-mapping-docentes",
-        label: "Mapeo flexible de columnas (Docentes)",
+        label: "Mapeo Flexible (Docentes)",
         icon: Columns3,
         href: customMappingDocentes?.href,
         status: "active",
@@ -116,7 +116,7 @@ export const breadcrumbMap: Record<string, BreadcrumbItem[]> = {
   "/etl/custom-mapping": [
     { label: "Inicio", href: "/" },
     { label: "Módulos ETL" },
-    { label: "Mapeo flexible de columnas" },
+    { label: "Mapeo flexible (Estudiantes)" },
   ],
   "/etl/docentes-siau": [
     { label: "Inicio", href: "/" },
@@ -126,7 +126,7 @@ export const breadcrumbMap: Record<string, BreadcrumbItem[]> = {
   "/etl/custom-mapping-docentes": [
     { label: "Inicio", href: "/" },
     { label: "Módulos ETL" },
-    { label: "Mapeo flexible de columnas (Docentes)" },
+    { label: "Mapeo Flexible (Docentes)" },
   ],
 };
 
