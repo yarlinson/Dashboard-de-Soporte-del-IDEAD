@@ -1,0 +1,5 @@
+N°,PAGO_MATRICULA,CÓDIGO_INSTITUCIONAL,USUARIO,NOMBRES,APELLIDOS,CORREO_INSTITUCIONAL,SEXO,FACULTAD,PROGRAMA,TIPO,DISCAPACIDAD,GRUPO_POBLACIONAL,GRUPO_VICTIMA,COMUNIDAD,GRUPO_ÉTNICO,CURSOS
+1,SI,20231001,jperez,Juan,Pérez Gómez,jperez@unillanos.edu.co,M,Ciencias Básicas,Ingeniería,Nuevo,No,No,No,No,No,"603701-1,603702-1"
+2,SI,20231002,mrodriguez,María,Rodríguez,mrodriguez@unillanos.edu.co,F,Ciencias Básicas,Ingeniería,Antiguo,No,No,No,No,No,"603701-1"
+3,SI,20231003,,Carlos,Martínez,not-an-email,M,Ciencias Básicas,Ingeniería,Nuevo,No,No,No,No,No,"603703-1"
+4,SI,20231004,alopez,Ana,López,alopez@unillanos.edu.co,F,Ciencias Básicas,Ingeniería,Nuevo,No,No,No,No,No,""
