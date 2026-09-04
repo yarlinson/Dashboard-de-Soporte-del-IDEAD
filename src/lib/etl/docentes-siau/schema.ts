@@ -9,6 +9,7 @@ export const SiauDocenteInputRowSchema = z.object({
   DOCENTE: z.string().optional().default(""),
   VINCULACION: z.string().optional().default(""),
   CURSO: z.string().optional().default(""),
+  ESTADO_CONTRATADO: z.string().optional().default(""),
 });
 export type SiauDocenteInputRow = z.infer<typeof SiauDocenteInputRowSchema>;
 

@@ -2,11 +2,30 @@
 
 import { useCallback, useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
-import { Columns3, Eye, Upload, X } from "lucide-react";
+import {
+  AlertTriangle,
+  CheckCircle2,
+  ChevronDown,
+  Columns3,
+  Download,
+  Eye,
+  FileSpreadsheet,
+  FileText,
+  Upload,
+  X,
+} from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, cardGlow } from "@/components/ui/card";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { FileDropzone } from "@/components/etl/file-dropzone";
@@ -14,6 +33,7 @@ import { PasteDataInput } from "@/components/etl/paste-data-input";
 import { DataPreviewTable } from "@/components/etl/data-preview-table";
 import { RowIssuesBadge } from "@/components/etl/row-issues-badge";
 import { DocenteRoleFilter } from "@/components/etl/docente-role-filter";
+import { DocenteAvisosFilter, type AvisosFilterValue } from "@/components/etl/docente-avisos-filter";
 import { EtlStepper, type EtlStepperStep } from "@/components/etl/etl-stepper";
 import { ColumnMappingDocenteForm } from "@/components/etl/custom-mapping-docentes/column-mapping-form";
 import { ConfigForm } from "@/components/etl/custom-mapping/config-form";
@@ -21,7 +41,12 @@ import { readTabularFile, parsePastedTable, downloadCsv, downloadXlsx, extractCo
 import { computeTransformSummary } from "@/lib/etl/core/summary";
 import { overrideKey } from "@/lib/etl/core/teacher-grouping";
 import { MoodleConfigSchema, type MoodleConfig } from "@/lib/etl/core/moodle";
-import { extractDistinctRoles, filterDocenteRowsByRole, type DocenteRowResult } from "@/lib/etl/core/moodle-docente";
+import {
+  extractDistinctRoles,
+  filterDocenteRowsByRole,
+  partitionDocenteRowsByAvisos,
+  type DocenteRowResult,
+} from "@/lib/etl/core/moodle-docente";
 import {
   transformCustomMappingDocentes,
   applyRemovedCoursesDocente,
@@ -62,6 +87,7 @@ export function CustomMappingDocentesWorkflow() {
   const [excludedRowIndexes, setExcludedRowIndexes] = useState<Set<number>>(new Set());
   const [removedCourses, setRemovedCourses] = useState<Record<number, Set<string>>>({});
   const [roleFilter, setRoleFilter] = useState<Set<string>>(new Set());
+  const [avisosFilter, setAvisosFilter] = useState<AvisosFilterValue>("all");
 
   const sourceColumns = useMemo(() => extractColumnNames(rawRows), [rawRows]);
   const pivotDetection = useMemo(() => detectPivotedColumns(sourceColumns), [sourceColumns]);
@@ -81,6 +107,12 @@ export function CustomMappingDocentesWorkflow() {
   const availableRoles = useMemo(() => extractDistinctRoles(editedRows), [editedRows]);
   const visibleRows = useMemo(() => filterDocenteRowsByRole(editedRows, roleFilter), [editedRows, roleFilter]);
   const visibleSummary = useMemo(() => computeTransformSummary(visibleRows), [visibleRows]);
+  const avisosPartition = useMemo(() => partitionDocenteRowsByAvisos(visibleRows), [visibleRows]);
+  const displayedRows = useMemo(() => {
+    if (avisosFilter === "clean") return avisosPartition.clean;
+    if (avisosFilter === "avisos") return avisosPartition.withAvisos;
+    return visibleRows;
+  }, [avisosFilter, avisosPartition, visibleRows]);
 
   const handleRoleOverride = useCallback((username: string, course: string, role: string) => {
     setRoleOverrides((prev) => ({ ...prev, [overrideKey(username, course)]: role }));
@@ -190,6 +222,7 @@ export function CustomMappingDocentesWorkflow() {
     setExcludedRowIndexes(new Set());
     setRemovedCourses({});
     setRoleFilter(new Set());
+    setAvisosFilter("all");
   }
 
   function handleSourceModeChange(mode: SourceMode) {
@@ -209,6 +242,7 @@ export function CustomMappingDocentesWorkflow() {
     setExcludedRowIndexes(new Set());
     setRemovedCourses({});
     setRoleFilter(new Set());
+    setAvisosFilter("all");
     try {
       const rows = await readTabularFile(file);
       applyColumnSuggestions(rows);
@@ -226,6 +260,7 @@ export function CustomMappingDocentesWorkflow() {
     setExcludedRowIndexes(new Set());
     setRemovedCourses({});
     setRoleFilter(new Set());
+    setAvisosFilter("all");
     try {
       const rows = parsePastedTable(text);
       if (rows.length === 0) {
@@ -252,6 +287,26 @@ export function CustomMappingDocentesWorkflow() {
     const { rows, columns } = getDocenteExportData(visibleRows);
     downloadXlsx("moodle-bulk-docentes.xlsx", rows, columns);
     recordRun({ caseId: "custom-mapping-docentes", caseLabel: "Mapeo flexible (Docentes)", totalRows: visibleSummary.totalRows, validRows: visibleSummary.validRows });
+  }
+
+  function handleExportClean() {
+    downloadCsv("moodle-bulk-docentes-limpios.csv", exportDocenteRowsToCsv(avisosPartition.clean));
+    recordRun({
+      caseId: "custom-mapping-docentes",
+      caseLabel: "Mapeo flexible (Docentes, limpios)",
+      totalRows: avisosPartition.clean.length,
+      validRows: avisosPartition.clean.length,
+    });
+  }
+
+  function handleExportAvisos() {
+    downloadCsv("moodle-bulk-docentes-con-avisos.csv", exportDocenteRowsToCsv(avisosPartition.withAvisos));
+    recordRun({
+      caseId: "custom-mapping-docentes",
+      caseLabel: "Mapeo flexible (Docentes, con avisos)",
+      totalRows: avisosPartition.withAvisos.length,
+      validRows: avisosPartition.withAvisos.length,
+    });
   }
 
   const steps: EtlStepperStep[] = [
@@ -364,14 +419,40 @@ export function CustomMappingDocentesWorkflow() {
               <Eye className="text-primary size-4" />
               3. Previsualización y exportación
             </CardTitle>
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={handleExportXlsx} disabled={visibleSummary.validRows === 0}>
-                Exportar Excel ({visibleSummary.validRows} docentes válidos)
-              </Button>
-              <Button onClick={handleExportCsv} disabled={visibleSummary.validRows === 0}>
-                Exportar CSV ({visibleSummary.validRows} docentes válidos)
-              </Button>
-            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button disabled={visibleSummary.validRows === 0}>
+                  <Download className="size-4" />
+                  Exportar
+                  <ChevronDown className="size-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-72">
+                <DropdownMenuLabel>Listado completo</DropdownMenuLabel>
+                <DropdownMenuItem onClick={handleExportCsv} disabled={visibleSummary.validRows === 0}>
+                  <FileText />
+                  Exportar CSV
+                  <span className="text-muted-foreground ml-auto text-xs">{visibleSummary.validRows}</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleExportXlsx} disabled={visibleSummary.validRows === 0}>
+                  <FileSpreadsheet />
+                  Exportar Excel
+                  <span className="text-muted-foreground ml-auto text-xs">{visibleSummary.validRows}</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuLabel>Por estado de revisión</DropdownMenuLabel>
+                <DropdownMenuItem onClick={handleExportClean} disabled={avisosPartition.clean.length === 0}>
+                  <CheckCircle2 className="text-success" />
+                  Limpios (sin avisos)
+                  <span className="text-muted-foreground ml-auto text-xs">{avisosPartition.clean.length}</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleExportAvisos} disabled={avisosPartition.withAvisos.length === 0}>
+                  <AlertTriangle className="text-warning" />
+                  Con avisos / por revisar
+                  <span className="text-muted-foreground ml-auto text-xs">{avisosPartition.withAvisos.length}</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </CardHeader>
           <CardContent className="flex flex-col gap-3">
             <DocenteRoleFilter
@@ -380,12 +461,18 @@ export function CustomMappingDocentesWorkflow() {
               onToggle={toggleRoleFilter}
               onClear={() => setRoleFilter(new Set())}
             />
+            <DocenteAvisosFilter
+              value={avisosFilter}
+              onChange={setAvisosFilter}
+              cleanCount={avisosPartition.clean.length}
+              avisosCount={avisosPartition.withAvisos.length}
+            />
             <p className="text-muted-foreground text-sm">
               {visibleSummary.totalRows} docentes totales · {visibleSummary.validRows} válidos ·{" "}
               {visibleSummary.rowsWithWarnings} con avisos · {visibleSummary.rowsWithErrors} con errores
               {roleFilter.size > 0 && ` · filtrado por ${roleFilter.size} vinculación(es)`}
             </p>
-            <DataPreviewTable columns={columns} data={visibleRows} onDeleteRow={handleDeleteRow} />
+            <DataPreviewTable columns={columns} data={displayedRows} onDeleteRow={handleDeleteRow} />
           </CardContent>
         </Card>
       )}

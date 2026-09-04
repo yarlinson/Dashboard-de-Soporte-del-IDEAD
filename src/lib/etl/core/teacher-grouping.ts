@@ -86,6 +86,15 @@ export function overrideKey(username: string, course: string): string {
   return `${username}::${course}`;
 }
 
+/** Rows whose `estadoOf(row) === "CONTRATADO"` are moved ahead of every other row, via a stable sort
+ * (rows within the same priority tier keep their original relative order). Used before grouping so
+ * that "first-encountered candidate wins" (see `resolveGroupRole`) effectively means "CONTRATADO wins
+ * over BORRADOR" when the same (docente, curso) pair has conflicting rows. */
+export function sortByContractPriority<T>(rows: T[], estadoOf: (row: T) => string): T[] {
+  const priority = (row: T) => (estadoOf(row) === "CONTRATADO" ? 0 : 1);
+  return [...rows].sort((a, b) => priority(a) - priority(b));
+}
+
 /** Resolves a single role for a (docente, curso) pair: the user's manual override if it's still a
  * valid candidate, otherwise the first-encountered candidate. */
 export function resolveGroupRole(

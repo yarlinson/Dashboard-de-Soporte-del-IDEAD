@@ -7,6 +7,7 @@ export interface DocenteNormalizedRow {
   email: string;
   course: string;
   vinculacion: string;
+  estadoContratado: string;
 }
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;

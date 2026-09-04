@@ -2,10 +2,16 @@
 
 import { useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
-import { FileDown } from "lucide-react";
+import { ChevronDown, Download, FileDown, FileSpreadsheet, FileText } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, cardGlow } from "@/components/ui/card";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { FileDropzone } from "@/components/etl/file-dropzone";
 import { DataPreviewTable } from "@/components/etl/data-preview-table";
 import { RowIssuesBadge } from "@/components/etl/row-issues-badge";
@@ -154,18 +160,27 @@ export function SiauToMoodleWorkflow() {
         <Card id="step-preview" className={cn(cardGlow({ glow: "red" }))}>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="text-base">3. Previsualización</CardTitle>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                onClick={handleExportXlsx}
-                disabled={visibleSummary.validRows === 0}
-              >
-                Exportar Excel ({visibleSummary.validRows} filas válidas)
-              </Button>
-              <Button onClick={handleExportCsv} disabled={visibleSummary.validRows === 0}>
-                Exportar CSV ({visibleSummary.validRows} filas válidas)
-              </Button>
-            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button disabled={visibleSummary.validRows === 0}>
+                  <Download className="size-4" />
+                  Exportar
+                  <ChevronDown className="size-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-64">
+                <DropdownMenuItem onClick={handleExportCsv} disabled={visibleSummary.validRows === 0}>
+                  <FileText />
+                  Exportar CSV
+                  <span className="text-muted-foreground ml-auto text-xs">{visibleSummary.validRows}</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleExportXlsx} disabled={visibleSummary.validRows === 0}>
+                  <FileSpreadsheet />
+                  Exportar Excel
+                  <span className="text-muted-foreground ml-auto text-xs">{visibleSummary.validRows}</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </CardHeader>
           <CardContent className="flex flex-col gap-3">
             <p className="text-muted-foreground text-sm">

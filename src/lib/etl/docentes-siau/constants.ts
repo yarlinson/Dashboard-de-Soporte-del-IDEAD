@@ -6,6 +6,7 @@ export const SIAU_DOCENTES_REQUIRED_COLUMNS = [
   "DOCENTE",
   "VINCULACION",
   "CURSO",
+  "ESTADO_CONTRATADO",
 ] as const;
 
 export const DEFAULT_ROLE_MAPPING: RoleMappingRule[] = [

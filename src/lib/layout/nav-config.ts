@@ -1,6 +1,8 @@
 import {
   ArrowRightLeft,
   Columns3,
+  FileDiff,
+  GitCompareArrows,
   GraduationCap,
   LayoutDashboard,
   MonitorPlay,
@@ -36,6 +38,8 @@ const siauToMoodle = etlUseCases.find((useCase) => useCase.id === "siau-to-moodl
 const customMapping = etlUseCases.find((useCase) => useCase.id === "custom-mapping");
 const docentesSiau = etlUseCases.find((useCase) => useCase.id === "docentes-siau");
 const customMappingDocentes = etlUseCases.find((useCase) => useCase.id === "custom-mapping-docentes");
+const docentesComparador = etlUseCases.find((useCase) => useCase.id === "docentes-comparador");
+const estudiantesComparador = etlUseCases.find((useCase) => useCase.id === "estudiantes-comparador");
 
 export const navGroups: NavGroup[] = [
   {
@@ -70,6 +74,13 @@ export const navGroups: NavGroup[] = [
         status: "active",
       },
       {
+        id: "estudiantes-comparador",
+        label: "Comparador de Estudiantes",
+        icon: GitCompareArrows,
+        href: estudiantesComparador?.href,
+        status: "active",
+      },
+      {
         id: "docentes",
         label: "Docentes SIAU → Moodle",
         icon: GraduationCap,
@@ -81,6 +92,13 @@ export const navGroups: NavGroup[] = [
         label: "Mapeo Flexible (Docentes)",
         icon: Columns3,
         href: customMappingDocentes?.href,
+        status: "active",
+      },
+      {
+        id: "docentes-comparador",
+        label: "Comparador de Docentes",
+        icon: FileDiff,
+        href: docentesComparador?.href,
         status: "active",
       },
       {
@@ -127,6 +145,16 @@ export const breadcrumbMap: Record<string, BreadcrumbItem[]> = {
     { label: "Inicio", href: "/" },
     { label: "Módulos ETL" },
     { label: "Mapeo Flexible (Docentes)" },
+  ],
+  "/etl/docentes-comparador": [
+    { label: "Inicio", href: "/" },
+    { label: "Módulos ETL" },
+    { label: "Comparador de Docentes" },
+  ],
+  "/etl/estudiantes-comparador": [
+    { label: "Inicio", href: "/" },
+    { label: "Módulos ETL" },
+    { label: "Comparador de Estudiantes" },
   ],
 };
 

@@ -3,7 +3,12 @@ import type { EtlIssue } from "../core/types";
 import { normalizeUsername, splitFullName } from "../core/moodle";
 import { computeTransformSummary } from "../core/summary";
 import { extractDistinctColumnValues } from "../core/csv";
-import { groupTeacherRows, computeRoleConflicts, type TeacherSourceRow } from "../core/teacher-grouping";
+import {
+  groupTeacherRows,
+  computeRoleConflicts,
+  sortByContractPriority,
+  type TeacherSourceRow,
+} from "../core/teacher-grouping";
 import {
   buildDocenteOutputRow,
   buildDocenteOutputColumns,
@@ -19,7 +24,7 @@ import { siauDocentesRules, type DocenteNormalizedRow } from "./rules";
 export { buildDocenteOutputColumns, getDocenteExportData, exportDocenteRowsToCsv };
 export type { DocenteRowResult, DocenteTransformResult, DocenteExportData };
 
-function blankIfDash(value: string): string {
+export function blankIfDash(value: string): string {
   const trimmed = value.trim();
   return trimmed === "-" ? "" : trimmed;
 }
@@ -47,6 +52,7 @@ function normalizeRow(raw: SiauDocenteInputRow): DocenteNormalizedRow {
     email,
     course: blankIfDash(raw.CURSO),
     vinculacion: blankIfDash(raw.VINCULACION),
+    estadoContratado: blankIfDash(raw.ESTADO_CONTRATADO).toUpperCase(),
   };
 }
 
@@ -89,9 +95,13 @@ export function transformSiauDocentes(
     return { rowIndex, normalized, issues };
   });
 
-  // Pass 2: build one TeacherSourceRow per valid source row, resolving its role from VINCULACION
+  // Pass 2: build one TeacherSourceRow per valid source row, resolving its role from VINCULACION.
+  // Rows are processed CONTRATADO-first so that, when the same (docente, curso) pair has conflicting
+  // vinculaciones, the "first-encountered candidate wins" tie-break in groupTeacherRows/resolveGroupRole
+  // ends up preferring the CONTRATADO row over a BORRADOR one.
   const sourceRows: TeacherSourceRow[] = [];
-  for (const { normalized, issues } of parsed) {
+  const prioritizedParsed = sortByContractPriority(parsed, (p) => p.normalized?.estadoContratado ?? "");
+  for (const { normalized, issues } of prioritizedParsed) {
     if (!normalized || hasErrors(issues)) continue;
     const role = roleLookup.get(normalizeVinculacionKey(normalized.vinculacion)) ?? null;
     sourceRows.push({
@@ -111,10 +121,22 @@ export function transformSiauDocentes(
           },
     });
   }
-  const { groups, order } = groupTeacherRows(sourceRows);
+  const { groups } = groupTeacherRows(sourceRows);
+
+  // Preserve the original file order for the docente list — the CONTRATADO-first processing order
+  // above only needs to influence which role wins per conflicting (docente, curso) pair, not the
+  // order docentes appear in the preview/export.
+  const presentationOrder: string[] = [];
+  const seenUsernames = new Set<string>();
+  for (const { normalized, issues } of parsed) {
+    if (!normalized || hasErrors(issues) || !groups.has(normalized.username)) continue;
+    if (seenUsernames.has(normalized.username)) continue;
+    seenUsernames.add(normalized.username);
+    presentationOrder.push(normalized.username);
+  }
 
   // Pass 3: build one output row per docente group
-  const groupResults: DocenteRowResult[] = order.map((username, index) => {
+  const groupResults: DocenteRowResult[] = presentationOrder.map((username, index) => {
     const group = groups.get(username)!;
     const issues = [...group.issues];
     if (group.courseRoles.size === 0) {

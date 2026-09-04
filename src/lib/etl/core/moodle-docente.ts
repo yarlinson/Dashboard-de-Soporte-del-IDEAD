@@ -93,3 +93,21 @@ export function filterDocenteRowsByRole(rows: DocenteRowResult[], roles: Readonl
     (r) => r.output !== null && Object.entries(r.output).some(([key, value]) => key.startsWith("role") && roles.has(value))
   );
 }
+
+export interface DocenteRowPartition {
+  clean: DocenteRowResult[];
+  withAvisos: DocenteRowResult[];
+}
+
+/** Splits successfully-processed docente rows (output !== null) into "sin avisos" (no issues at all)
+ * and "con avisos" (carrying warning issues, e.g. CONFLICTING_ROLE). Rows with blocking errors
+ * (output === null) are excluded from both — they have nothing exportable yet. */
+export function partitionDocenteRowsByAvisos(rows: DocenteRowResult[]): DocenteRowPartition {
+  const clean: DocenteRowResult[] = [];
+  const withAvisos: DocenteRowResult[] = [];
+  for (const r of rows) {
+    if (!r.output) continue;
+    (r.issues.length === 0 ? clean : withAvisos).push(r);
+  }
+  return { clean, withAvisos };
+}
