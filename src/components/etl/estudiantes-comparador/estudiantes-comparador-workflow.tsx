@@ -18,10 +18,12 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { FileDropzone } from "@/components/etl/file-dropzone";
 import { DataPreviewTable } from "@/components/etl/data-preview-table";
 import { EtlStepper, type EtlStepperStep } from "@/components/etl/etl-stepper";
 import { readTabularFile, downloadCsv, downloadXlsx } from "@/lib/etl/core/csv";
+import { MoodleConfigSchema, type MoodleConfig } from "@/lib/etl/core/moodle";
 import { diffStudents } from "@/lib/etl/estudiantes-comparador/diff";
 import {
   parseComparableStudentsFromSiauRows,
@@ -77,7 +79,15 @@ export function EstudiantesComparadorWorkflow() {
   const { recordRun } = useEtlHistory();
   const [previous, setPrevious] = useState<FileSlotState>(EMPTY_SLOT);
   const [current, setCurrent] = useState<FileSlotState>(EMPTY_SLOT);
-  const [genericPassword, setGenericPassword] = useState(DEFAULT_GENERIC_PASSWORD);
+  const [exportConfig, setExportConfig] = useState<MoodleConfig>({
+    genericPassword: DEFAULT_GENERIC_PASSWORD,
+    applyPeriodSuffix: false,
+    periodSuffix: "/2026B",
+  });
+  const exportConfigValidation = MoodleConfigSchema.safeParse(exportConfig);
+  const periodSuffixError = exportConfigValidation.success
+    ? undefined
+    : exportConfigValidation.error.issues.find((issue) => issue.path[0] === "periodSuffix")?.message;
 
   const previousParsed = useMemo(
     () => (previous.rawRows ? parseByFormat(previous.rawRows, previous.format) : null),
@@ -116,12 +126,12 @@ export function EstudiantesComparadorWorkflow() {
   }
 
   const addedExportRows = useMemo(
-    () => (diff ? buildAddedMoodleRows(diff, genericPassword) : []),
-    [diff, genericPassword]
+    () => (diff ? buildAddedMoodleRows(diff, exportConfig) : []),
+    [diff, exportConfig]
   );
   const removedExportRows = useMemo(
-    () => (diff ? buildRemovedMoodleRows(diff, genericPassword) : []),
-    [diff, genericPassword]
+    () => (diff ? buildRemovedMoodleRows(diff, exportConfig) : []),
+    [diff, exportConfig]
   );
 
   function handleExportAddedCsv() {
@@ -328,7 +338,9 @@ export function EstudiantesComparadorWorkflow() {
             <CardTitle className="text-base">3. Detalle y exportación</CardTitle>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button disabled={addedExportRows.length === 0 && removedExportRows.length === 0}>
+                <Button
+                  disabled={(addedExportRows.length === 0 && removedExportRows.length === 0) || !exportConfigValidation.success}
+                >
                   <Download className="size-4" />
                   Exportar
                   <ChevronDown className="size-4" />
@@ -368,14 +380,45 @@ export function EstudiantesComparadorWorkflow() {
             </DropdownMenu>
           </CardHeader>
           <CardContent className="flex flex-col gap-6">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="comparador-estudiantes-password">Contraseña genérica (para los CSV/Excel exportados)</Label>
+                <Input
+                  id="comparador-estudiantes-password"
+                  value={exportConfig.genericPassword}
+                  onChange={(e) => setExportConfig((prev) => ({ ...prev, genericPassword: e.target.value }))}
+                />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <div className="flex items-center justify-between gap-2">
+                  <Label htmlFor="comparador-estudiantes-period-suffix">Sufijo de período académico</Label>
+                  <div className="flex items-center gap-2">
+                    <span className="text-muted-foreground text-xs">
+                      {exportConfig.applyPeriodSuffix ? "Activado" : "Desactivado"}
+                    </span>
+                    <Switch
+                      checked={exportConfig.applyPeriodSuffix}
+                      onCheckedChange={(checked) => setExportConfig((prev) => ({ ...prev, applyPeriodSuffix: checked }))}
+                    />
+                  </div>
+                </div>
+                <Input
+                  id="comparador-estudiantes-period-suffix"
+                  value={exportConfig.periodSuffix}
+                  onChange={(e) => setExportConfig((prev) => ({ ...prev, periodSuffix: e.target.value }))}
+                  placeholder="Ej. /2026B"
+                  disabled={!exportConfig.applyPeriodSuffix}
+                />
+                {exportConfig.applyPeriodSuffix ? (
+                  periodSuffixError && <p className="text-destructive text-xs">{periodSuffixError}</p>
+                ) : (
+                  <p className="text-muted-foreground text-xs">
+                    Los cursos se exportarán sin sufijo (código tal como se comparó).
+                  </p>
+                )}
+              </div>
+            </div>
             <div className="flex flex-col gap-2">
-              <Label htmlFor="comparador-estudiantes-password">Contraseña genérica (para los CSV/Excel exportados)</Label>
-              <Input
-                id="comparador-estudiantes-password"
-                className="max-w-xs"
-                value={genericPassword}
-                onChange={(e) => setGenericPassword(e.target.value)}
-              />
               <p className="text-muted-foreground text-xs">
                 Los archivos exportados usan el mismo formato de carga masiva de Moodle que Estudiantes SIAU
                 → Moodle (username, password, firstname, lastname, email, course1, ...).

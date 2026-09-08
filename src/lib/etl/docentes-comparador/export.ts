@@ -1,4 +1,5 @@
 import { rowsToCsv } from "../core/csv";
+import type { MoodleConfig } from "../core/moodle";
 import type { MoodleDocenteOutputRow } from "../core/moodle-docente";
 import type { DocentesDiffResult } from "./types";
 
@@ -7,12 +8,12 @@ function buildMoodleRow(
   firstname: string,
   lastname: string,
   email: string,
-  password: string,
+  config: MoodleConfig,
   courses: [course: string, role: string][]
 ): MoodleDocenteOutputRow {
-  const row: MoodleDocenteOutputRow = { username, password, firstname, lastname, email };
+  const row: MoodleDocenteOutputRow = { username, password: config.genericPassword, firstname, lastname, email };
   courses.forEach(([course, role], i) => {
-    row[`course${i + 1}`] = course;
+    row[`course${i + 1}`] = config.applyPeriodSuffix ? `${course}${config.periodSuffix}` : course;
     row[`role${i + 1}`] = role;
   });
   return row;
@@ -20,12 +21,15 @@ function buildMoodleRow(
 
 /** Novedades de adición, en el mismo formato de carga masiva de Moodle que usa el motor Docentes SIAU
  * (`username,password,firstname,lastname,email,course1,role1,...`): docentes nuevos con todos sus cursos,
- * y docentes existentes solo con los cursos que se les agregaron. */
-export function buildAddedMoodleRows(diff: DocentesDiffResult, password: string): MoodleDocenteOutputRow[] {
+ * y docentes existentes solo con los cursos que se les agregaron. Los códigos de curso comparados están
+ * normalizados (sin sufijo de período, ver `core/course-code.ts`), así que `config.periodSuffix` se
+ * reaplica aquí si `config.applyPeriodSuffix` está activo — igual que hace el motor Docentes SIAU → Moodle
+ * al generar su propio archivo de salida. */
+export function buildAddedMoodleRows(diff: DocentesDiffResult, config: MoodleConfig): MoodleDocenteOutputRow[] {
   const rows: MoodleDocenteOutputRow[] = [];
   for (const teacher of diff.addedTeachers) {
     rows.push(
-      buildMoodleRow(teacher.username, teacher.firstname, teacher.lastname, teacher.email, password, Array.from(teacher.courses))
+      buildMoodleRow(teacher.username, teacher.firstname, teacher.lastname, teacher.email, config, Array.from(teacher.courses))
     );
   }
   for (const modified of diff.modifiedTeachers) {
@@ -36,7 +40,7 @@ export function buildAddedMoodleRows(diff: DocentesDiffResult, password: string)
         modified.firstname,
         modified.lastname,
         modified.email,
-        password,
+        config,
         modified.addedCourses.map((c) => [c.course, c.role])
       )
     );
@@ -45,12 +49,12 @@ export function buildAddedMoodleRows(diff: DocentesDiffResult, password: string)
 }
 
 /** Docentes de baja (con todos sus cursos previos) y cursos retirados de docentes que se mantienen, en el
- * mismo formato de carga masiva de Moodle. */
-export function buildRemovedMoodleRows(diff: DocentesDiffResult, password: string): MoodleDocenteOutputRow[] {
+ * mismo formato de carga masiva de Moodle. Mismo reaplicado de `periodSuffix` que `buildAddedMoodleRows`. */
+export function buildRemovedMoodleRows(diff: DocentesDiffResult, config: MoodleConfig): MoodleDocenteOutputRow[] {
   const rows: MoodleDocenteOutputRow[] = [];
   for (const teacher of diff.removedTeachers) {
     rows.push(
-      buildMoodleRow(teacher.username, teacher.firstname, teacher.lastname, teacher.email, password, Array.from(teacher.courses))
+      buildMoodleRow(teacher.username, teacher.firstname, teacher.lastname, teacher.email, config, Array.from(teacher.courses))
     );
   }
   for (const modified of diff.modifiedTeachers) {
@@ -61,7 +65,7 @@ export function buildRemovedMoodleRows(diff: DocentesDiffResult, password: strin
         modified.firstname,
         modified.lastname,
         modified.email,
-        password,
+        config,
         modified.removedCourses.map((c) => [c.course, c.role])
       )
     );
