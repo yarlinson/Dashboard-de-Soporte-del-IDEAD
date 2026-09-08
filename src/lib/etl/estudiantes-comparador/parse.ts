@@ -1,4 +1,5 @@
 import { normalizeUsername, parseCourseCodes } from "../siau-to-moodle/transform";
+import { normalizeCourseCodeForComparison } from "../core/course-code";
 import { SiauInputRowSchema, type SiauInputRow } from "../siau-to-moodle/schema";
 import type { ComparableStudent } from "./types";
 
@@ -45,7 +46,7 @@ export function parseComparableStudentsFromSiauRows(rawRows: Record<string, unkn
       firstname: row.firstname,
       lastname: row.lastname,
       email: row.email,
-      courses: new Set(row.courses),
+      courses: new Set(row.courses.map(normalizeCourseCodeForComparison)),
     });
   }
   return result;
@@ -53,21 +54,33 @@ export function parseComparableStudentsFromSiauRows(rawRows: Record<string, unkn
 
 const OUTPUT_COURSE_COLUMN = /^course(\d+)$/;
 
+/** Result of parsing an already-processed Moodle-output file: the resolved estudiantes plus any
+ * usernames that appeared in more than one row (kept for parity with `diffStudents`'s "last row
+ * wins" behavior — this only surfaces the warning, it doesn't change which row is kept). */
+export interface ParsedComparableStudents {
+  students: ComparableStudent[];
+  duplicateUsernames: string[];
+}
+
 /**
  * Builds `ComparableStudent[]` from un archivo ya procesado (salida del motor
  * Estudiantes SIAU → Moodle: username, password, firstname, lastname, email, course1,
  * course2, ...). Cada fila ya representa un estudiante, así que no requiere agrupación
  * ni lectura de columnas de rol (los estudiantes no tienen rol configurable).
  */
-export function parseComparableStudentsFromMoodleOutputRows(rawRows: Record<string, unknown>[]): ComparableStudent[] {
+export function parseComparableStudentsFromMoodleOutputRows(rawRows: Record<string, unknown>[]): ParsedComparableStudents {
   const result: ComparableStudent[] = [];
+  const seenUsernames = new Set<string>();
+  const duplicateUsernames = new Set<string>();
   for (const raw of rawRows) {
     const username = String(raw.username ?? "").trim();
     if (!username) continue;
+    if (seenUsernames.has(username)) duplicateUsernames.add(username);
+    seenUsernames.add(username);
     const courses = new Set<string>();
     for (const key of Object.keys(raw)) {
       if (!OUTPUT_COURSE_COLUMN.test(key)) continue;
-      const course = String(raw[key] ?? "").trim();
+      const course = normalizeCourseCodeForComparison(String(raw[key] ?? ""));
       if (course) courses.add(course);
     }
     result.push({
@@ -78,5 +91,5 @@ export function parseComparableStudentsFromMoodleOutputRows(rawRows: Record<stri
       courses,
     });
   }
-  return result;
+  return { students: result, duplicateUsernames: Array.from(duplicateUsernames) };
 }

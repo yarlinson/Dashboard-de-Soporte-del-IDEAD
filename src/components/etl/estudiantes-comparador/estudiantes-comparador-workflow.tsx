@@ -48,9 +48,14 @@ interface FileSlotState {
 
 const EMPTY_SLOT: FileSlotState = { format: "siau", fileError: null, rawRows: null };
 
-function parseByFormat(rawRows: Record<string, unknown>[], format: FileFormat): ComparableStudent[] {
+interface ParsedStudentsSlot {
+  students: ComparableStudent[];
+  duplicateUsernames: string[];
+}
+
+function parseByFormat(rawRows: Record<string, unknown>[], format: FileFormat): ParsedStudentsSlot {
   return format === "siau"
-    ? parseComparableStudentsFromSiauRows(rawRows)
+    ? { students: parseComparableStudentsFromSiauRows(rawRows), duplicateUsernames: [] }
     : parseComparableStudentsFromMoodleOutputRows(rawRows);
 }
 
@@ -74,14 +79,16 @@ export function EstudiantesComparadorWorkflow() {
   const [current, setCurrent] = useState<FileSlotState>(EMPTY_SLOT);
   const [genericPassword, setGenericPassword] = useState(DEFAULT_GENERIC_PASSWORD);
 
-  const previousStudents = useMemo(
+  const previousParsed = useMemo(
     () => (previous.rawRows ? parseByFormat(previous.rawRows, previous.format) : null),
     [previous.rawRows, previous.format]
   );
-  const currentStudents = useMemo(
+  const currentParsed = useMemo(
     () => (current.rawRows ? parseByFormat(current.rawRows, current.format) : null),
     [current.rawRows, current.format]
   );
+  const previousStudents = previousParsed?.students ?? null;
+  const currentStudents = currentParsed?.students ?? null;
 
   const diff = useMemo(() => {
     if (!previousStudents || !currentStudents) return null;
@@ -251,6 +258,15 @@ export function EstudiantesComparadorWorkflow() {
             {previousStudents && !previous.fileError && (
               <p className="text-muted-foreground text-sm">{previousStudents.length} estudiantes detectados.</p>
             )}
+            {previousParsed && previousParsed.duplicateUsernames.length > 0 && (
+              <Alert>
+                <AlertTitle>Usernames duplicados en el archivo</AlertTitle>
+                <AlertDescription>
+                  {previousParsed.duplicateUsernames.length} username(s) aparecen en más de una fila; se usó la
+                  última fila de cada uno: {previousParsed.duplicateUsernames.join(", ")}
+                </AlertDescription>
+              </Alert>
+            )}
           </div>
 
           <div className="flex flex-col gap-3">
@@ -276,6 +292,15 @@ export function EstudiantesComparadorWorkflow() {
             )}
             {currentStudents && !current.fileError && (
               <p className="text-muted-foreground text-sm">{currentStudents.length} estudiantes detectados.</p>
+            )}
+            {currentParsed && currentParsed.duplicateUsernames.length > 0 && (
+              <Alert>
+                <AlertTitle>Usernames duplicados en el archivo</AlertTitle>
+                <AlertDescription>
+                  {currentParsed.duplicateUsernames.length} username(s) aparecen en más de una fila; se usó la
+                  última fila de cada uno: {currentParsed.duplicateUsernames.join(", ")}
+                </AlertDescription>
+              </Alert>
             )}
           </div>
         </CardContent>

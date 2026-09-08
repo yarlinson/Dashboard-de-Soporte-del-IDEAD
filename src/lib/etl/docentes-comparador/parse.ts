@@ -1,5 +1,6 @@
 import { normalizeUsername, splitFullName } from "../core/moodle";
 import { groupTeacherRows, resolveGroupRole, sortByContractPriority, type TeacherSourceRow } from "../core/teacher-grouping";
+import { normalizeCourseCodeForComparison } from "../core/course-code";
 import { SiauDocenteInputRowSchema, type SiauDocenteInputRow, type RoleMappingRule } from "../docentes-siau/schema";
 import { blankIfDash, buildRoleLookup, normalizeVinculacionKey } from "../docentes-siau/transform";
 import type { ComparableDocente } from "./types";
@@ -68,7 +69,7 @@ export function parseComparableDocentesFromSiauRows(
   for (const group of groups.values()) {
     const courses = new Map<string, string>();
     for (const [course, candidates] of group.courseRoles) {
-      courses.set(course, resolveGroupRole(candidates, group.username, course, {}));
+      courses.set(normalizeCourseCodeForComparison(course), resolveGroupRole(candidates, group.username, course, {}));
     }
     result.push({ username: group.username, firstname: group.firstname, lastname: group.lastname, email: group.email, courses });
   }
@@ -77,21 +78,33 @@ export function parseComparableDocentesFromSiauRows(
 
 const OUTPUT_COURSE_COLUMN = /^course(\d+)$/;
 
+/** Result of parsing an already-processed Moodle-output file: the resolved docentes plus any
+ * usernames that appeared in more than one row (kept for parity with `diffDocentes`'s "last row
+ * wins" behavior — this only surfaces the warning, it doesn't change which row is kept). */
+export interface ParsedComparableDocentes {
+  docentes: ComparableDocente[];
+  duplicateUsernames: string[];
+}
+
 /**
  * Builds `ComparableDocente[]` from un archivo ya procesado (salida del motor Docentes SIAU → Moodle:
  * username, password, firstname, lastname, email, course1, role1, course2, role2, ...). Cada fila ya
  * representa un docente, así que no requiere agrupación.
  */
-export function parseComparableDocentesFromMoodleOutputRows(rawRows: Record<string, unknown>[]): ComparableDocente[] {
+export function parseComparableDocentesFromMoodleOutputRows(rawRows: Record<string, unknown>[]): ParsedComparableDocentes {
   const result: ComparableDocente[] = [];
+  const seenUsernames = new Set<string>();
+  const duplicateUsernames = new Set<string>();
   for (const raw of rawRows) {
     const username = String(raw.username ?? "").trim();
     if (!username) continue;
+    if (seenUsernames.has(username)) duplicateUsernames.add(username);
+    seenUsernames.add(username);
     const courses = new Map<string, string>();
     for (const [key, value] of Object.entries(raw)) {
       const match = OUTPUT_COURSE_COLUMN.exec(key);
       if (!match) continue;
-      const course = String(value ?? "").trim();
+      const course = normalizeCourseCodeForComparison(String(value ?? ""));
       if (!course) continue;
       const role = String(raw[`role${match[1]}`] ?? "").trim();
       courses.set(course, role);
@@ -104,5 +117,5 @@ export function parseComparableDocentesFromMoodleOutputRows(rawRows: Record<stri
       courses,
     });
   }
-  return result;
+  return { docentes: result, duplicateUsernames: Array.from(duplicateUsernames) };
 }
