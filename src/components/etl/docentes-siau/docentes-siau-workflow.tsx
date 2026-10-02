@@ -24,6 +24,7 @@ import { DocenteAvisosFilter, type AvisosFilterValue } from "@/components/etl/do
 import { EtlStepper, type EtlStepperStep } from "@/components/etl/etl-stepper";
 import { ConfigForm } from "@/components/etl/docentes-siau/config-form";
 import { readTabularFile, downloadCsv, downloadXlsx } from "@/lib/etl/core/csv";
+import { findMissingColumns } from "@/lib/etl/core/headers";
 import { downloadCsvTemplate, downloadXlsxTemplate } from "@/lib/etl/core/template";
 import { computeTransformSummary } from "@/lib/etl/core/summary";
 import { overrideKey } from "@/lib/etl/core/teacher-grouping";
@@ -33,7 +34,13 @@ import {
   exportDocenteRowsToCsv,
   getDocenteExportData,
 } from "@/lib/etl/docentes-siau/transform";
-import { SIAU_DOCENTES_REQUIRED_COLUMNS, DEFAULT_ROLE_MAPPING, DEFAULT_GENERIC_PASSWORD } from "@/lib/etl/docentes-siau/constants";
+import {
+  SIAU_DOCENTES_REQUIRED_COLUMNS,
+  SIAU_DOCENTES_ESSENTIAL_COLUMNS,
+  SIAU_DOCENTES_COLUMN_ALIASES,
+  DEFAULT_ROLE_MAPPING,
+  DEFAULT_GENERIC_PASSWORD,
+} from "@/lib/etl/docentes-siau/constants";
 import type { DocenteConfig } from "@/lib/etl/docentes-siau/schema";
 import {
   extractDistinctRoles,
@@ -107,6 +114,7 @@ export function DocentesSiauWorkflow() {
       { header: "Nombre", id: "firstname", accessorFn: (row) => row.output?.firstname ?? "—" },
       { header: "Apellido", id: "lastname", accessorFn: (row) => row.output?.lastname ?? "—" },
       { header: "Email", id: "email", accessorFn: (row) => row.output?.email ?? "—" },
+      { header: "Unidad", id: "unidad", accessorFn: (row) => row.output?.unidad || "—" },
       {
         header: "Cursos ↔ Roles",
         id: "coursesRoles",
@@ -166,7 +174,26 @@ export function DocentesSiauWorkflow() {
     setRoleFilter(new Set());
     setAvisosFilter("all");
     try {
-      const rows = await readTabularFile(file, { expectedHeaders: SIAU_DOCENTES_REQUIRED_COLUMNS });
+      const rows = await readTabularFile(file, {
+        expectedHeaders: SIAU_DOCENTES_REQUIRED_COLUMNS,
+        columnAliases: SIAU_DOCENTES_COLUMN_ALIASES,
+      });
+      if (rows.length === 0) {
+        setRawRows([]);
+        setFileError("El archivo no contiene filas de datos debajo del encabezado.");
+        return;
+      }
+      // Without this check an unrecognized header set parses "fine" but every row fails validation,
+      // leaving an empty preview with no explanation of why.
+      const missing = findMissingColumns(rows, SIAU_DOCENTES_ESSENTIAL_COLUMNS);
+      if (missing.length > 0) {
+        setRawRows([]);
+        setFileError(
+          `El archivo no tiene las columnas requeridas: ${missing.join(", ")}. ` +
+            `Columnas encontradas: ${Object.keys(rows[0] ?? {}).join(", ") || "(ninguna)"}.`
+        );
+        return;
+      }
       setRawRows(rows);
     } catch {
       setRawRows([]);

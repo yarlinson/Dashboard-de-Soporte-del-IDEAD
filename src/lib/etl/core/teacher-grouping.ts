@@ -5,6 +5,8 @@ export interface TeacherGroup {
   firstname: string;
   lastname: string;
   email: string;
+  /** Academic unit (SIAU's UNIDAD column), taken from this docente's first-encountered source row — informational only, not used for grouping or role resolution. Empty when the source has no UNIDAD column. */
+  unidad: string;
   /** course -> candidate roles in encounter order; [0] is the default winner unless overridden. */
   courseRoles: Map<string, string[]>;
   issues: EtlIssue[];
@@ -16,6 +18,8 @@ export interface TeacherSourceRow {
   lastname: string;
   email: string;
   course: string;
+  /** Academic unit (SIAU's UNIDAD column); omitted by callers whose source has no such column, in which case the group's `unidad` stays "". */
+  unidad?: string;
   /** null when the row's role couldn't be resolved — the course is skipped and `unresolvedRoleIssue` (if present) is recorded. */
   role: string | null;
   unresolvedRoleIssue?: EtlIssue;
@@ -42,6 +46,7 @@ export function groupTeacherRows(rows: TeacherSourceRow[]): GroupedTeachers {
         firstname: row.firstname,
         lastname: row.lastname,
         email: row.email,
+        unidad: row.unidad ?? "",
         courseRoles: new Map(),
         issues: [],
       };

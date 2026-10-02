@@ -53,6 +53,7 @@ function normalizeRow(raw: SiauDocenteInputRow): DocenteNormalizedRow {
     course: blankIfDash(raw.CURSO),
     vinculacion: blankIfDash(raw.VINCULACION),
     estadoContratado: blankIfDash(raw.ESTADO_CONTRATADO).toUpperCase(),
+    unidad: blankIfDash(raw.UNIDAD),
   };
 }
 
@@ -110,6 +111,7 @@ export function transformSiauDocentes(
       lastname: normalized.lastname,
       email: normalized.email,
       course: normalized.course,
+      unidad: normalized.unidad,
       role,
       unresolvedRoleIssue: role
         ? undefined

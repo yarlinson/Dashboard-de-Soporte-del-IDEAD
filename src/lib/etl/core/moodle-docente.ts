@@ -36,6 +36,7 @@ export function buildDocenteOutputRow(
     firstname: group.firstname,
     lastname: group.lastname,
     email: group.email,
+    unidad: group.unidad,
   };
   let index = 0;
   for (const [course, candidates] of group.courseRoles) {
@@ -52,8 +53,20 @@ export function buildDocenteOutputColumns(rows: DocenteRowResult[]): string[] {
     const courseCount = Object.keys(r.output).filter((k) => k.startsWith("course")).length;
     return Math.max(max, courseCount);
   }, 0);
+  // Only shown when at least one row actually carries a UNIDAD value — callers whose source has no
+  // such column (e.g. custom-mapping-docentes) leave it blank on every row, so the export keeps its
+  // existing shape instead of gaining a column that's always empty.
+  const hasUnidad = rows.some((r) => r.output?.unidad);
   const courseRoleColumns = Array.from({ length: maxCourses }, (_, i) => [`course${i + 1}`, `role${i + 1}`]).flat();
-  return ["username", "password", "firstname", "lastname", "email", ...courseRoleColumns];
+  return [
+    "username",
+    "password",
+    "firstname",
+    "lastname",
+    "email",
+    ...(hasUnidad ? ["unidad"] : []),
+    ...courseRoleColumns,
+  ];
 }
 
 export interface DocenteExportData {
