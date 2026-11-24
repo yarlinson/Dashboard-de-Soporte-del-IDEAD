@@ -1,4 +1,4 @@
-import { ArrowRightLeft, Columns3, FileDiff, GitCompareArrows, GraduationCap, type LucideIcon } from "lucide-react";
+import { ArrowRightLeft, Columns3, FileDiff, GitCompareArrows, GraduationCap, Timer, type LucideIcon } from "lucide-react";
 
 export interface EtlUseCaseMeta {
   id: string;
@@ -55,5 +55,13 @@ export const etlUseCases: EtlUseCaseMeta[] = [
       "Compara dos cargas del reporte de estudiantes tomadas en momentos distintos y detecta estudiantes nuevos, retirados y cambios de curso.",
     href: "/etl/estudiantes-comparador",
     icon: GitCompareArrows,
+  },
+  {
+    id: "dedicacion-curso",
+    title: "Dedicación del curso (Tiempo de uso del Campus)",
+    description:
+      "Calcula el tiempo estimado que cada participante dedicó a un curso a partir del informe de Registros de Moodle, agrupando sus clics en sesiones.",
+    href: "/etl/dedicacion",
+    icon: Timer,
   },
 ];

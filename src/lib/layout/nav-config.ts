@@ -7,6 +7,7 @@ import {
   LayoutDashboard,
   MonitorPlay,
   SlidersHorizontal,
+  Timer,
   type LucideIcon,
 } from "lucide-react";
 
@@ -40,6 +41,7 @@ const docentesSiau = etlUseCases.find((useCase) => useCase.id === "docentes-siau
 const customMappingDocentes = etlUseCases.find((useCase) => useCase.id === "custom-mapping-docentes");
 const docentesComparador = etlUseCases.find((useCase) => useCase.id === "docentes-comparador");
 const estudiantesComparador = etlUseCases.find((useCase) => useCase.id === "estudiantes-comparador");
+const dedicacion = etlUseCases.find((useCase) => useCase.id === "dedicacion-curso");
 
 export const navGroups: NavGroup[] = [
   {
@@ -102,6 +104,13 @@ export const navGroups: NavGroup[] = [
         status: "active",
       },
       {
+        id: "dedicacion-curso",
+        label: "Dedicación del Curso",
+        icon: Timer,
+        href: dedicacion?.href,
+        status: "active",
+      },
+      {
         id: "aulas-virtuales",
         label: "Aulas Virtuales",
         icon: MonitorPlay,
@@ -155,6 +164,11 @@ export const breadcrumbMap: Record<string, BreadcrumbItem[]> = {
     { label: "Inicio", href: "/" },
     { label: "Módulos ETL" },
     { label: "Comparador de Estudiantes" },
+  ],
+  "/etl/dedicacion": [
+    { label: "Inicio", href: "/" },
+    { label: "Módulos ETL" },
+    { label: "Dedicación del curso" },
   ],
 };
 
