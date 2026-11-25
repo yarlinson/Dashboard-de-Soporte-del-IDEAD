@@ -28,17 +28,17 @@ export function EtlStepper({ steps }: { steps: EtlStepperStep[] }) {
   return (
     <ol className="flex items-center gap-1.5 sm:gap-3" aria-label="Progreso de la transformación">
       {steps.map((step, index) => (
-        <li key={step.id} className="flex flex-1 items-center gap-1.5 last:flex-none sm:gap-3">
+        <li key={step.id} aria-current={step.status === "active" ? "step" : undefined} className="flex flex-1 items-center gap-1.5 last:flex-none sm:gap-3">
           <button
             type="button"
             onClick={() => scrollToStep(step.id)}
-            className="flex shrink-0 items-center gap-2 rounded-md text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-unillanos-red-dark"
+            className="flex shrink-0 items-center gap-2 rounded-sm text-left"
           >
             <span
               className={cn(
-                "flex size-7 shrink-0 items-center justify-center rounded-full border text-xs font-medium",
+                "type-display flex size-7 shrink-0 items-center justify-center rounded-sm border text-sm",
                 step.status === "complete" && "border-unillanos-red-dark bg-unillanos-red-dark text-white",
-                step.status === "active" && "border-unillanos-red-dark text-unillanos-red-dark",
+                step.status === "active" && "border-unillanos-red-dark bg-unillanos-red-dark/10 text-unillanos-red",
                 step.status === "pending" && "border-border text-muted-foreground"
               )}
             >
@@ -78,7 +78,7 @@ export function EtlStepper({ steps }: { steps: EtlStepperStep[] }) {
           </button>
 
           {index < steps.length - 1 && (
-            <span className="bg-border relative h-px min-w-4 flex-1 overflow-hidden rounded-full">
+            <span aria-hidden className="bg-border relative h-px min-w-4 flex-1 overflow-hidden">
               <motion.span
                 className="bg-unillanos-red-dark absolute inset-y-0 left-0"
                 initial={false}

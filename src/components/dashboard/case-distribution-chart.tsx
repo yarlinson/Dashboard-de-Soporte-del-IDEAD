@@ -1,31 +1,14 @@
 "use client";
 
 import { useMemo } from "react";
-import { Bar, BarChart, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis, type TooltipContentProps } from "recharts";
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useEtlHistory } from "@/hooks/use-etl-history";
 
-const CHART_COLORS = ["var(--chart-5)", "var(--chart-4)", "var(--chart-3)", "var(--chart-2)", "var(--chart-1)"];
-
-function ChartTooltip({ active, payload }: TooltipContentProps) {
-  if (!active || !payload?.length) return null;
-  const point = payload[0].payload as { caseLabel: string; rows: number };
-  return (
-    <div className="border-border bg-popover text-popover-foreground rounded-md border px-3 py-2 text-xs shadow-md">
-      <p className="font-medium">{point.caseLabel}</p>
-      <p className="text-muted-foreground">{point.rows.toLocaleString("es-CO")} filas procesadas</p>
-    </div>
-  );
-}
-
 /**
- * Distribución de filas procesadas por herramienta ETL, agregada del mismo
- * historial local que alimenta `StatsOverview`. Es magnitud (una sola
- * herramienta por barra, ya etiquetada en el eje) — por eso usa la rampa
- * roja secuencial de `--chart-1..5` en vez de colores categóricos, que
- * competirían con el rojo ya reservado para estados de error.
+ * Filas procesadas por herramienta, agregadas del mismo historial local que alimenta `StatsOverview`.
+ * Son barras de magnitud con la etiqueta encima de cada una (los nombres son largos para un eje lateral),
+ * en un solo color: cada barra ya está nombrada, así que no necesita una paleta categórica.
  */
 export function CaseDistributionChart() {
   const { history, isLoaded } = useEtlHistory();
@@ -40,45 +23,31 @@ export function CaseDistributionChart() {
     return Array.from(totals.values()).sort((a, b) => b.rows - a.rows);
   }, [history]);
 
+  if (!isLoaded) return <Skeleton className="h-28 w-full" />;
+
+  if (data.length === 0) {
+    return (
+      <p className="text-muted-foreground text-sm leading-relaxed">
+        Cuando proceses un archivo, aquí verás cuántas filas ha transformado cada herramienta.
+      </p>
+    );
+  }
+
+  const max = data[0].rows;
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base">Distribución de filas procesadas</CardTitle>
-        <CardDescription>Registros transformados por herramienta ETL, según el historial local.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        {!isLoaded ? (
-          <Skeleton className="h-56 w-full" />
-        ) : data.length === 0 ? (
-          <p className="text-muted-foreground py-10 text-center text-sm">
-            Aún no hay transformaciones registradas. Procesa un archivo en cualquier herramienta ETL para ver la
-            distribución aquí.
-          </p>
-        ) : (
-          <div className="h-56">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={data} layout="vertical" margin={{ left: 0, right: 16, top: 4, bottom: 4 }}>
-                <XAxis type="number" stroke="var(--muted-foreground)" fontSize={12} tickLine={false} axisLine={false} />
-                <YAxis
-                  type="category"
-                  dataKey="caseLabel"
-                  stroke="var(--muted-foreground)"
-                  fontSize={12}
-                  tickLine={false}
-                  axisLine={false}
-                  width={150}
-                />
-                <Tooltip cursor={{ fill: "var(--accent)" }} content={(props) => <ChartTooltip {...props} />} />
-                <Bar dataKey="rows" radius={[0, 6, 6, 0]}>
-                  {data.map((entry, index) => (
-                    <Cell key={entry.caseLabel} fill={CHART_COLORS[index % CHART_COLORS.length]} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
+    <ul className="flex flex-col gap-4">
+      {data.map((entry) => (
+        <li key={entry.caseLabel} className="flex flex-col gap-1.5">
+          <div className="flex items-baseline justify-between gap-3 text-sm">
+            <span className="text-foreground min-w-0 truncate">{entry.caseLabel}</span>
+            <span className="text-muted-foreground shrink-0">{entry.rows.toLocaleString("es-CO")}</span>
           </div>
-        )}
-      </CardContent>
-    </Card>
+          <div className="bg-muted h-2 rounded-sm" role="img" aria-label={`${entry.rows} filas`}>
+            <div className="bg-primary h-full rounded-sm" style={{ width: `${Math.max((entry.rows / max) * 100, 3)}%` }} />
+          </div>
+        </li>
+      ))}
+    </ul>
   );
 }

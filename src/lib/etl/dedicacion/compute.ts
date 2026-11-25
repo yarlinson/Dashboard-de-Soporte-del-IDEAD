@@ -41,11 +41,10 @@ export function computeDedication(rows: LogEvent[], params: DedicationParams): P
   const to = params.to ? new Date(`${params.to}T23:59:59`).getTime() : Infinity;
   const excluded = params.exclude.split(",").map(normText).filter(Boolean);
 
+  // `rows` ya viene ordenado por hora (parseLogTable), así que cada grupo conserva el orden.
   const byUser = new Map<string, LogEvent[]>();
   for (const r of rows) {
     if (r.t < from || r.t > to) continue;
-    const haystack = `${normText(r.name)} ${normText(r.email)}`;
-    if (excluded.some((e) => haystack.includes(e))) continue;
     const key = r.uid ? `id:${r.uid}` : r.email ? `em:${r.email.toLowerCase()}` : `n:${r.name}`;
     const list = byUser.get(key);
     if (list) list.push(r);
@@ -53,10 +52,14 @@ export function computeDedication(rows: LogEvent[], params: DedicationParams): P
   }
 
   const results: ParticipantDedication[] = [];
-  for (const [key, list] of byUser) {
-    const events = list.sort((a, b) => a.t - b.t);
+  for (const [key, events] of byUser) {
     let uid = "";
     let email = "";
+    // La exclusión se evalúa una vez por participante (no por fila).
+    if (excluded.length > 0) {
+      const haystack = `${normText(events[events.length - 1].name)} ${normText(events.find((e) => e.email)?.email)}`;
+      if (excluded.some((e) => haystack.includes(e))) continue;
+    }
     for (let j = events.length - 1; j >= 0; j--) {
       if (!uid && events[j].uid) uid = events[j].uid;
       if (!email && events[j].email) email = events[j].email;

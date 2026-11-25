@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useMemo, useState } from "react";
+import { Fragment, useDeferredValue, useMemo, useState } from "react";
 import { ArrowDown, ArrowUp, ChevronDown, ChevronRight, Download, FileSpreadsheet, FileText } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -70,12 +70,19 @@ export function DedicacionWorkflow() {
   const [logs, setLogs] = useState<ParsedLogs | null>(null);
   const [fileName, setFileName] = useState("");
   const [fileError, setFileError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const [params, setParams] = useState<DedicationParams>(DEFAULT_DEDICATION_PARAMS);
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<{ key: SortKey; dir: 1 | -1 }>({ key: "total", dir: -1 });
   const [openKey, setOpenKey] = useState<string | null>(null);
 
-  const results = useMemo(() => (logs ? computeDedication(logs.rows, params) : []), [logs, params]);
+  // El recálculo usa una copia diferida: escribir en un parámetro no se traba con archivos grandes.
+  const deferredParams = useDeferredValue(params);
+  const isRecalculating = deferredParams !== params;
+  const results = useMemo(
+    () => (logs ? computeDedication(logs.rows, deferredParams) : []),
+    [logs, deferredParams]
+  );
 
   const visible = useMemo(() => {
     const q = normText(search);
@@ -91,6 +98,9 @@ export function DedicacionWorkflow() {
 
   async function handleFileSelected(file: File) {
     setFileError(null);
+    setIsLoading(true);
+    // Cede un frame para que se pinte "Procesando…" antes del trabajo pesado.
+    await new Promise((resolve) => setTimeout(resolve, 30));
     try {
       const parsed = parseLogTable(await readLogFile(file));
       if (parsed.rows.length === 0) throw new Error("El archivo no tiene registros con fecha válida.");
@@ -102,6 +112,8 @@ export function DedicacionWorkflow() {
     } catch (error) {
       setLogs(null);
       setFileError(error instanceof Error ? error.message : "No se pudo leer el archivo.");
+    } finally {
+      setIsLoading(false);
     }
   }
 
@@ -180,6 +192,11 @@ export function DedicacionWorkflow() {
             hint="El ID de usuario se toma de la columna “Descripción”. El archivo se procesa solo en tu navegador."
             onFileSelected={handleFileSelected}
           />
+          {isLoading && (
+            <p className="text-muted-foreground animate-pulse text-sm" role="status">
+              Procesando el archivo… con registros muy grandes puede tardar unos segundos.
+            </p>
+          )}
           {fileError && (
             <Alert variant="destructive">
               <AlertTitle>Error al leer el archivo</AlertTitle>
@@ -281,7 +298,7 @@ export function DedicacionWorkflow() {
               </DropdownMenuContent>
             </DropdownMenu>
           </CardHeader>
-          <CardContent className="flex flex-col gap-4">
+          <CardContent className={`flex flex-col gap-4 transition-opacity ${isRecalculating ? "opacity-60" : ""}`}>
             <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
               <StatTile label="Participantes" value={results.length.toLocaleString("es-CO")} />
               <StatTile label="Dedicación total" value={formatDuration(totalMs)} />

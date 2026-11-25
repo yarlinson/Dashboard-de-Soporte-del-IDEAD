@@ -1,8 +1,5 @@
 "use client";
 
-import { CalendarClock, FileStack, Repeat } from "lucide-react";
-
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useEtlHistory } from "@/hooks/use-etl-history";
 
@@ -16,9 +13,8 @@ function formatRelativeTime(iso: string): string {
 }
 
 /**
- * KPIs reales del home, alimentados por el historial local de corridas
- * (`useEtlHistory`) en vez de los "0" fijos que tenía antes. Todo el cálculo
- * ocurre en el cliente porque el historial vive en `localStorage`.
+ * Resumen del historial local de corridas (`useEtlHistory`), en filas simples dentro de la columna lateral
+ * del inicio. Todo el cálculo ocurre en el cliente porque el historial vive en `localStorage`.
  */
 export function StatsOverview() {
   const { history, isLoaded } = useEtlHistory();
@@ -29,54 +25,29 @@ export function StatsOverview() {
   const lastRun = history[0];
 
   const stats = [
+    { id: "hoy", label: "Transformaciones hoy", value: String(runsToday) },
+    { id: "registros", label: "Registros procesados", value: totalRowsProcessed.toLocaleString("es-CO") },
     {
-      id: "transformaciones-hoy",
-      label: "Transformaciones hoy",
-      value: String(runsToday),
-      hint: "Ejecuciones completadas hoy",
-      icon: Repeat,
-    },
-    {
-      id: "registros-procesados",
-      label: "Registros procesados",
-      value: totalRowsProcessed.toLocaleString("es-CO"),
-      hint: "Filas transformadas en total",
-      icon: FileStack,
-    },
-    {
-      id: "ultima-transformacion",
-      label: "Última transformación",
-      value: lastRun ? formatRelativeTime(lastRun.timestamp) : "—",
-      hint: lastRun ? lastRun.caseLabel : "Aún no hay registros",
-      icon: CalendarClock,
+      id: "ultima",
+      label: lastRun ? `Última: ${lastRun.caseLabel}` : "Última transformación",
+      value: lastRun ? formatRelativeTime(lastRun.timestamp) : "Sin registros",
     },
   ];
 
   return (
-    <div className="grid gap-4 sm:grid-cols-3">
+    <dl className="divide-border divide-y">
       {stats.map((stat) => (
-        <Card key={stat.id}>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-muted-foreground text-sm font-medium">{stat.label}</CardTitle>
-              <stat.icon className="text-unillanos-red size-4" />
-            </div>
-          </CardHeader>
-          <CardContent>
+        <div key={stat.id} className="flex items-baseline justify-between gap-4 py-3 first:pt-0">
+          <dt className="text-muted-foreground min-w-0 text-sm leading-snug">{stat.label}</dt>
+          <dd className="shrink-0">
             {isLoaded ? (
-              <>
-                <p className="text-foreground text-3xl font-bold">{stat.value}</p>
-                <p className="text-muted-foreground mt-1 text-xs">{stat.hint}</p>
-              </>
+              <span className="type-display text-foreground text-2xl">{stat.value}</span>
             ) : (
-              <>
-                <Skeleton className="h-9 w-16" />
-                <Skeleton className="mt-2 h-3 w-32" />
-              </>
+              <Skeleton className="h-7 w-14" />
             )}
-          </CardContent>
-        </Card>
+          </dd>
+        </div>
       ))}
-    </div>
+    </dl>
   );
 }

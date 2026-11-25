@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation"
 import { ChevronRight, PanelLeftClose, PanelLeftOpen } from "lucide-react"
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { ThemeToggle } from "@/components/layout/theme-toggle"
@@ -58,11 +57,6 @@ export function Header({
       </div>
 
       <div className="flex shrink-0 items-center gap-4">
-        <Badge variant="outline" className="hidden border-unillanos-red-dark/40 sm:inline-flex">
-          <span className="text-foreground font-semibold">IDEAD · Unillanos</span>
-          <span className="text-unillanos-red">Alta Calidad</span>
-        </Badge>
-
         <ThemeToggle />
 
         <div className="flex items-center gap-3">
@@ -70,8 +64,8 @@ export function Header({
             <p className="text-foreground text-sm font-medium">Administrador Campus</p>
             <p className="text-muted-foreground text-xs">Soporte Técnico</p>
           </div>
-          <Avatar className="ring-unillanos-red-dark ring-offset-background size-9 ring-2 ring-offset-2">
-            <AvatarFallback className="bg-muted text-foreground text-sm font-semibold">
+          <Avatar className="size-9">
+            <AvatarFallback className="bg-unillanos-red-dark type-display text-sm text-white">
               AC
             </AvatarFallback>
           </Avatar>

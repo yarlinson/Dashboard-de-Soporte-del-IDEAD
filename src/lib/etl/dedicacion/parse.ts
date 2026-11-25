@@ -19,6 +19,16 @@ export function normText(value: unknown): string {
     .trim();
 }
 
+/** Normalización liviana para fechas (sin NFD: los 3 primeros caracteres de los meses no llevan tilde). */
+function normDate(value: unknown): string {
+  return String(value ?? "")
+    .toLowerCase()
+    .replace(/\b([ap])\.?\s?m\.?/g, "$1m")
+    .replace(/\s+de\s+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 const RE_ISO = /(\d{4})-(\d{2})-(\d{2})[ t](\d{1,2}):(\d{2})(?::(\d{2}))?/;
 const RE_NUM = /(\d{1,2})[/.-](\d{1,2})[/.-](\d{2,4}),?\s+(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(am|pm)?/;
 const RE_TXT = /(\d{1,2})\s+([a-z]{3,})\.?,?\s+(\d{4}),?\s+(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(am|pm)?/;
@@ -37,7 +47,7 @@ function detectDateOrder(values: unknown[]): DateOrder {
   let mdy = 0;
   for (const v of values.slice(0, 3000)) {
     if (v instanceof Date || typeof v === "number") continue;
-    const m = normText(v).match(RE_NUM);
+    const m = normDate(v).match(RE_NUM);
     if (!m) continue;
     if (+m[1] > 12) dmy++;
     else if (+m[2] > 12) mdy++;
@@ -52,7 +62,7 @@ function parseDate(value: unknown, order: DateOrder): number | null {
     return Math.round((value - 25569) * 86400000 + new Date().getTimezoneOffset() * 60000);
   }
   if (value == null || value === "") return null;
-  const s = normText(value);
+  const s = normDate(value);
   let m = s.match(RE_ISO);
   if (m) return new Date(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +(m[6] ?? 0)).getTime();
   m = s.match(RE_TXT);
@@ -84,7 +94,7 @@ const COLS = {
   desc: ["descripcion", "description"],
 } as const;
 
-const RE_UID = /(?:user|usuario)\s+(?:with|con)\s+(?:el\s+)?id\s+'?(\d+)'?/;
+const RE_UID = /(?:user|usuario)\s+(?:with|con)\s+(?:el\s+)?id\s+'?(\d+)'?/i;
 
 function findCol(headers: unknown[], names: readonly string[]): number {
   const keys = headers.map((h) => normText(String(h ?? "").replace(/^﻿/, "")));
@@ -143,7 +153,7 @@ export function parseLogTable(table: unknown[][]): ParsedLogs {
     let uid = cols.uid >= 0 ? String(row[cols.uid] ?? "").trim() : "";
     if (!/^\d+$/.test(uid)) uid = "";
     if (!uid && cols.desc >= 0) {
-      const m = normText(row[cols.desc]).match(RE_UID);
+      const m = String(row[cols.desc] ?? "").match(RE_UID);
       if (m) uid = m[1];
     }
     if (email) withEmail++;
@@ -151,6 +161,8 @@ export function parseLogTable(table: unknown[][]): ParsedLogs {
     rows.push({ t, name, email, uid, ip: cols.ip >= 0 ? String(row[cols.ip] ?? "") : "" });
   }
 
+  // Se ordena una sola vez: así el cálculo no reordena cada vez que cambia un parámetro.
+  rows.sort((a, b) => a.t - b.t);
   return { rows, badDates, hasEmail: withEmail > 0, hasId: withId > 0 };
 }
 

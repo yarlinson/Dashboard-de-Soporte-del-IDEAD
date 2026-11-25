@@ -6,8 +6,9 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-plex-sans);
+  --font-mono: var(--font-plex-mono);
+  --font-display: var(--font-archivo);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -41,12 +42,13 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
-  --color-unillanos-red: #dc2626;
+  /* Rojo como texto/icono (ajustado por tema para contraste) y rojo sólido de marca (fondos con texto blanco). */
+  --color-unillanos-red: var(--brand-text);
   --color-unillanos-red-dark: #d30614;
-  --color-unillanos-black: #09090b;
-  --color-unillanos-surface: #18181b;
-  --color-unillanos-border: #27272a;
-  --color-unillanos-text-secondary: #a1a1aa;
+  --color-unillanos-black: #0f1217;
+  --color-unillanos-surface: #161b23;
+  --color-unillanos-border: #262e3a;
+  --color-unillanos-text-secondary: #98a2b3;
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -54,88 +56,84 @@
 }
 
 :root {
-  --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  /* Rojo institucional también en modo claro, para consistencia de marca con el modo oscuro. */
+  --radius: 0.375rem;
+  /* Hoja de trabajo: gris azulado frío, superficies blancas encima. */
+  --background: #f1f2f5;
+  --foreground: #14181f;
+  --card: #ffffff;
+  --card-foreground: #14181f;
+  --popover: #ffffff;
+  --popover-foreground: #14181f;
+  --brand-text: #c8101e;
   --primary: #d30614;
   --primary-foreground: #ffffff;
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
+  --secondary: #e7e9ee;
+  --secondary-foreground: #14181f;
+  --muted: #e7e9ee;
+  --muted-foreground: #566070;
+  --accent: #e7e9ee;
+  --accent-foreground: #14181f;
+  --destructive: #c0261d;
   /* Distintos de --destructive: estado "OK" y estado "aviso" en RowIssuesBadge y paneles de conflicto. */
-  --success: #15803d;
+  --success: #1f7a4d;
   --success-foreground: #ffffff;
-  --warning: #a15c07;
+  --warning: #8a5300;
   --warning-foreground: #ffffff;
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
+  --border: #d8dce3;
+  --input: #cdd2da;
   --ring: #d30614;
-  /* Rampa secuencial roja (magnitud, no identidad) para gráficos de distribución. */
   --chart-1: #fecaca;
   --chart-2: #fca5a5;
   --chart-3: #f87171;
   --chart-4: #ef4444;
   --chart-5: #d30614;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar: #ffffff;
+  --sidebar-foreground: #14181f;
   --sidebar-primary: #d30614;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-accent: #eef0f4;
+  --sidebar-accent-foreground: #14181f;
+  --sidebar-border: #d8dce3;
   --sidebar-ring: #d30614;
 }
 
 .dark {
-  /* Institutional IDEAD/Unillanos palette (red/black from the accreditation seal). */
-  --background: #09090b;
-  --foreground: #ffffff;
-  --card: #18181b;
-  --card-foreground: #ffffff;
-  --popover: #18181b;
-  --popover-foreground: #ffffff;
-  --primary: #dc2626;
+  --background: #0f1217;
+  --foreground: #eceff3;
+  --card: #161b23;
+  --card-foreground: #eceff3;
+  --popover: #161b23;
+  --popover-foreground: #eceff3;
+  --brand-text: #ff6a74;
+  --primary: #d62a37;
   --primary-foreground: #ffffff;
-  --secondary: #27272a;
-  --secondary-foreground: #ffffff;
-  --muted: #18181b;
-  --muted-foreground: #a1a1aa;
-  --accent: #27272a;
-  --accent-foreground: #ffffff;
-  /* Kept distinct from --primary (both are red now) so destructive actions stay visually separate. */
+  --secondary: #222935;
+  --secondary-foreground: #eceff3;
+  --muted: #1b212b;
+  --muted-foreground: #98a2b3;
+  --accent: #222935;
+  --accent-foreground: #eceff3;
   --destructive: #ef4444;
-  /* Distintos de --destructive: estado "OK" y estado "aviso" en RowIssuesBadge y paneles de conflicto. */
-  --success: #22c55e;
+  --success: #3ccf7c;
   --success-foreground: #052e12;
   --warning: #f5a524;
   --warning-foreground: #2b1600;
-  --border: #27272a;
-  --input: rgba(255, 255, 255, 0.12);
-  --ring: #dc2626;
-  /* Rampa secuencial roja (magnitud, no identidad) para gráficos de distribución. */
+  --border: #262e3a;
+  --input: rgba(255, 255, 255, 0.14);
+  --ring: #ff6a74;
   --chart-1: #fca5a5;
   --chart-2: #f87171;
   --chart-3: #ef4444;
   --chart-4: #dc2626;
   --chart-5: #d30614;
-  /* Slightly lighter than --background for subtle depth against the main content well. */
-  --sidebar: #0d0d0d;
-  --sidebar-foreground: #ffffff;
-  --sidebar-primary: #dc2626;
+  --sidebar: #0b0e13;
+  --sidebar-foreground: #eceff3;
+  --sidebar-primary: #d62a37;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: rgba(39, 39, 42, 0.5);
-  --sidebar-accent-foreground: #ffffff;
-  --sidebar-border: #27272a;
-  --sidebar-ring: #dc2626;
+  --sidebar-accent: #1b212b;
+  --sidebar-accent-foreground: #eceff3;
+  --sidebar-border: #262e3a;
+  --sidebar-ring: #ff6a74;
 }
 
 @layer base {
@@ -144,5 +142,39 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-feature-settings: "tnum" 1;
+  }
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+/* Títulos: Archivo condensada, en eco del wordmark IDEAD. */
+@utility type-display {
+  font-family: var(--font-display);
+  font-stretch: 75%;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1.05;
+}
+
+/* Único momento de movimiento: la línea que une origen y destino se dibuja una vez al cargar el inicio. */
+@keyframes flow-draw {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
   }
 }

@@ -42,7 +42,7 @@ export function Sidebar({ collapsed }: { collapsed: boolean }) {
     >
       <div className="flex h-16 items-center gap-3 border-b border-sidebar-border px-4">
         {collapsed ? (
-          <div className="flex size-8 shrink-0 items-center justify-center rounded-md bg-unillanos-red-dark text-xs font-bold text-white">
+          <div className="type-display flex size-8 shrink-0 items-center justify-center rounded-sm bg-unillanos-red-dark text-sm text-white">
             ID
           </div>
         ) : (
@@ -59,10 +59,10 @@ export function Sidebar({ collapsed }: { collapsed: boolean }) {
 
       <nav className="flex-1 overflow-y-auto overflow-x-hidden px-2 py-4">
         {navGroups.map((group) => (
-          <div key={group.id} className="mb-4">
+          <div key={group.id} className="mb-5">
             <Label
               collapsed={collapsed}
-              className="text-sidebar-foreground/60 block px-3 pb-2 text-[11px] font-semibold tracking-wider uppercase"
+              className="text-sidebar-foreground/60 block px-3 pb-1.5 text-xs font-medium"
             >
               {group.label}
             </Label>
@@ -78,9 +78,9 @@ export function Sidebar({ collapsed }: { collapsed: boolean }) {
                         href={item.href}
                         title={item.label}
                         className={cn(
-                          "flex items-center gap-3 rounded-md border-l-2 px-3 py-2 text-sm transition-colors",
+                          "flex items-center gap-3 rounded-sm border-l-2 px-3 py-2 text-sm transition-colors",
                           isActive
-                            ? "border-unillanos-red-dark bg-sidebar-accent text-sidebar-foreground font-bold"
+                            ? "border-unillanos-red-dark bg-sidebar-accent text-sidebar-foreground font-semibold"
                             : "text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground border-transparent"
                         )}
                       >
@@ -96,14 +96,14 @@ export function Sidebar({ collapsed }: { collapsed: boolean }) {
                     <div
                       aria-disabled="true"
                       title={`${item.label} (Próximamente)`}
-                      className="text-sidebar-foreground/50 flex cursor-not-allowed items-center gap-3 rounded-md border-l-2 border-transparent px-3 py-2 text-sm"
+                      className="text-sidebar-foreground/50 flex cursor-not-allowed items-center gap-3 rounded-sm border-l-2 border-transparent px-3 py-2 text-sm"
                     >
                       <Icon className="size-4 shrink-0" />
                       <Label collapsed={collapsed} className="flex-1">
                         {item.label}
                       </Label>
                       {!collapsed && (
-                        <Badge variant="outline" className="shrink-0 text-[10px]">
+                        <Badge variant="outline" className="shrink-0 text-[11px]">
                           Próximamente
                         </Badge>
                       )}

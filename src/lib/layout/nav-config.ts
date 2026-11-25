@@ -47,75 +47,56 @@ export const navGroups: NavGroup[] = [
   {
     id: "general",
     label: "General",
-    items: [
-      {
-        id: "dashboard",
-        label: "Dashboard / Inicio",
-        icon: LayoutDashboard,
-        href: "/",
-        status: "active",
-      },
-    ],
+    items: [{ id: "dashboard", label: "Inicio", icon: LayoutDashboard, href: "/", status: "active" }],
   },
   {
-    id: "etl",
-    label: "Herramientas ETL",
+    id: "estudiantes",
+    label: "Estudiantes",
     items: [
       {
         id: "siau-to-moodle",
-        label: "Estudiantes SIAU → Moodle",
+        label: "SIAU → Moodle",
         icon: ArrowRightLeft,
         href: siauToMoodle?.href,
         status: "active",
       },
       {
         id: "custom-mapping",
-        label: "Mapeo flexible (Estudiantes)",
+        label: "Mapeo flexible",
         icon: Columns3,
         href: customMapping?.href,
         status: "active",
       },
       {
         id: "estudiantes-comparador",
-        label: "Comparador de Estudiantes",
+        label: "Comparador",
         icon: GitCompareArrows,
         href: estudiantesComparador?.href,
         status: "active",
       },
-      {
-        id: "docentes",
-        label: "Docentes SIAU → Moodle",
-        icon: GraduationCap,
-        href: docentesSiau?.href,
-        status: "active",
-      },
+    ],
+  },
+  {
+    id: "docentes",
+    label: "Docentes",
+    items: [
+      { id: "docentes", label: "SIAU → Moodle", icon: GraduationCap, href: docentesSiau?.href, status: "active" },
       {
         id: "custom-mapping-docentes",
-        label: "Mapeo Flexible (Docentes)",
+        label: "Mapeo flexible",
         icon: Columns3,
         href: customMappingDocentes?.href,
         status: "active",
       },
-      {
-        id: "docentes-comparador",
-        label: "Comparador de Docentes",
-        icon: FileDiff,
-        href: docentesComparador?.href,
-        status: "active",
-      },
-      {
-        id: "dedicacion-curso",
-        label: "Dedicación del Curso",
-        icon: Timer,
-        href: dedicacion?.href,
-        status: "active",
-      },
-      {
-        id: "aulas-virtuales",
-        label: "Aulas Virtuales",
-        icon: MonitorPlay,
-        status: "soon",
-      },
+      { id: "docentes-comparador", label: "Comparador", icon: FileDiff, href: docentesComparador?.href, status: "active" },
+    ],
+  },
+  {
+    id: "cursos",
+    label: "Cursos",
+    items: [
+      { id: "dedicacion-curso", label: "Dedicación del curso", icon: Timer, href: dedicacion?.href, status: "active" },
+      { id: "aulas-virtuales", label: "Aulas virtuales", icon: MonitorPlay, status: "soon" },
     ],
   },
   {
@@ -124,10 +105,10 @@ export const navGroups: NavGroup[] = [
     items: [
       {
         id: "configuracion",
-        label: "Configuración de Parámetros",
+        label: "Parámetros",
         icon: SlidersHorizontal,
         status: "soon",
-        description: "Períodos, Passwords genéricas",
+        description: "Períodos, contraseñas genéricas",
       },
     ],
   },
